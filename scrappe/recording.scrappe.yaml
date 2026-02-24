@@ -1,0 +1,40 @@
+# Scraper Configuration — Généré automatiquement par MapLeads
+# Date: 2026-02-24T19:54:06.270Z
+#
+# Ce fichier a été généré depuis un enregistrement Playwright UI Mode.
+# Vous pouvez le modifier manuellement pour affiner le scraping.
+name: recording
+url: https://www.linkedin.com/
+headless: true
+viewport:
+  width: 1920
+  height: 1080
+scrapers:
+  - name: recording
+    url: https://www.linkedin.com/
+    steps:
+      - action: navigate
+        params:
+          url: https://www.linkedin.com/feed/
+      - action: click
+        params:
+          selector: "[role=button anthony michel • Vous • Co-]"
+        options:
+          optional: true
+      - action: click
+        params:
+          selector: "[role=typeahead-results-overlay]"
+        options:
+          optional: true
+      - action: navigate
+        params:
+          url: https://www.linkedin.com/in/thonymg/
+      - action: click
+        params:
+          selector: "[role=link Tout afficher]"
+        options:
+          optional: true
+metadata:
+  recordedAt: 2026-02-24T19:54:06.270Z
+  playwrightVersion: 1.58.2
+  optimizerVersion: 1.0.0

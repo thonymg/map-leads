@@ -57,7 +57,7 @@ function extractDomain(url: string): string {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname.replace('www.', '');
     const parts = hostname.split('.');
-    
+
     // Cas spéciaux : linkedin.com, facebook.com, etc.
     const knownDomains: Record<string, string> = {
       'linkedin': 'LINKEDIN',
@@ -65,23 +65,48 @@ function extractDomain(url: string): string {
       'twitter': 'TWITTER',
       'instagram': 'INSTAGRAM',
     };
-    
+
     // Chercher un domaine connu
     for (const [key, value] of Object.entries(knownDomains)) {
       if (hostname.includes(key)) {
         return value;
       }
     }
-    
+
     // Prend les deux dernières parties (ex: linkedin.com)
     if (parts.length >= 2) {
       const domain = parts.slice(-2).join('.');
       return domain.replace(/\./g, '_').toUpperCase();
     }
-    
+
     return 'UNKNOWN';
   } catch {
     return 'UNKNOWN';
+  }
+}
+
+/**
+ * Corrige et valide une URL
+ */
+function fixUrl(url: string): string {
+  // Remplacer les virgules par des points
+  let fixed = url.replace(/,/g, '.');
+  
+  // Supprimer les espaces
+  fixed = fixed.trim();
+  
+  // Ajouter https:// si manquant
+  if (!fixed.startsWith('http://') && !fixed.startsWith('https://')) {
+    fixed = 'https://' + fixed;
+  }
+  
+  // Tenter de parser pour valider
+  try {
+    new URL(fixed);
+    return fixed;
+  } catch {
+    // Si l'URL est toujours invalide, retourner l'originale
+    return url;
   }
 }
 
@@ -226,16 +251,14 @@ async function main() {
   
   // Demander l'URL de connexion
   let loginUrl = await ask('📝 URL de connexion (ex: https://linkedin.com/login): ');
-  
+
   if (!loginUrl) {
     console.log('❌ URL requise');
     process.exit(1);
   }
-  
-  // Ajouter https:// si manquant
-  if (!loginUrl.startsWith('http')) {
-    loginUrl = 'https://' + loginUrl;
-  }
+
+  // Corriger et valider l'URL
+  loginUrl = fixUrl(loginUrl);
   
   // Demander le nom du domaine (optionnel, sera auto-détecté)
   const domainInput = await ask('📁 Nom du domaine (ex: LINKEDIN, appuyez sur Entrée pour auto-détecter): ');
