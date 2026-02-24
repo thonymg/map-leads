@@ -13,19 +13,31 @@ test = {
     "**/coverage/**",
     "**/results/**",
     "**/logs/**",
+    "**/recordings/**",
+    "**/scrappe/**",
+    "**/sessions/**",
   ]
 }
 
 # Configuration de la couverture de code
 coverage = {
-  enabled = false,
+  enabled = true,
   coverageDir = "./coverage",
-  include = ["src/**/*.{ts,js}"],
+  include = [
+    "src/**/*.ts",
+  ],
   exclude = [
     "**/*.test.ts",
     "**/node_modules/**",
     "**/dist/**",
     "**/coverage/**",
+    "**/types.ts",
   ],
-  reporter = ["text", "json", "html"]
+  reporter = ["text", "json", "html", "lcov"],
+  thresholds = {
+    lines = 98,
+    functions = 98,
+    branches = 95,
+    statements = 98,
+  }
 }
