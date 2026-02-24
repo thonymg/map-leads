@@ -26,7 +26,7 @@ export async function click(params: ClickParams, page: Page): Promise<ActionResu
     
     // Si le selector ressemble à [role=...] avec des espaces, utiliser text= ou getByRole
     const roleMatch = selector.match(/^\[role=(\w+)\s+(.*)\]$/);
-    if (roleMatch) {
+    if (roleMatch && roleMatch[1] && roleMatch[2]) {
       const [, role, text] = roleMatch;
       // Utiliser getByRole avec le texte
       const locator = page.getByRole(role as any, { name: new RegExp(text, 'i') });

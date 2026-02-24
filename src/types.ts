@@ -52,7 +52,7 @@ export interface ViewportSize {
 /**
  * Type d'action disponible
  */
-export type ActionType = 'navigate' | 'wait' | 'click' | 'fill' | 'extract' | 'paginate' | 'session-load' | 'session-save';
+export type ActionType = 'navigate' | 'wait' | 'click' | 'fill' | 'extract' | 'paginate' | 'session-load' | 'session-save' | 'loop' | 'navigate-back';
 
 /**
  * Définition d'une étape dans un scraper
@@ -165,6 +165,30 @@ export interface SessionSaveParams extends BaseActionParams {
 }
 
 /**
+ * Paramètres pour l'action loop
+ */
+export interface LoopParams extends BaseActionParams {
+  /** Sélecteur des éléments à itérer */
+  selector: string;
+  /** Actions à exécuter pour chaque élément */
+  steps: StepDefinition[];
+  /** Variable de contexte pour l'index (optionnel) */
+  indexVar?: string;
+  /** Nombre maximum d'itérations (optionnel) */
+  max_iterations?: number;
+  /** Délai entre chaque itération en ms (optionnel) */
+  delayBetweenIterations?: number;
+}
+
+/**
+ * Paramètres pour l'action navigate-back
+ */
+export interface NavigateBackParams extends BaseActionParams {
+  /** Nombre de pages à revenir en arrière (défaut: 1) */
+  count?: number;
+}
+
+/**
  * Union de tous les types de paramètres d'actions
  */
 export type ActionParams =
@@ -175,7 +199,9 @@ export type ActionParams =
   | ExtractParams
   | PaginateParams
   | SessionLoadParams
-  | SessionSaveParams;
+  | SessionSaveParams
+  | LoopParams
+  | NavigateBackParams;
 
 // ============================================================================
 // Résultats
@@ -254,6 +280,8 @@ export interface ScraperContext {
     itemSelector?: string;
     fields?: ExtractField[];
   };
+  /** Variables de contexte pour les boucles */
+  contextVars?: Record<string, unknown>;
 }
 
 /**

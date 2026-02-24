@@ -51,7 +51,7 @@ export class ConfigLoadError extends Error {
 /**
  * Actions valides pour validation
  */
-const VALID_ACTIONS: ActionType[] = ['navigate', 'wait', 'click', 'fill', 'extract', 'paginate', 'session-load', 'session-save'];
+const VALID_ACTIONS: ActionType[] = ['navigate', 'wait', 'click', 'fill', 'extract', 'paginate', 'session-load', 'session-save', 'loop', 'navigate-back'];
 
 /**
  * Charge et parse un fichier YAML
@@ -312,6 +312,49 @@ function validateSessionSaveParams(params: Record<string, unknown>, stepIndex: n
 }
 
 /**
+ * Valide les paramètres d'une action loop
+ */
+function validateLoopParams(params: Record<string, unknown>, stepIndex: number, scraperName: string): void {
+  const path = `scrapers[${scraperName}].steps[${stepIndex}].params`;
+
+  validateRequiredField<string>(getStringProp(params, 'selector'), 'selector', path);
+
+  const steps = getArrayProp(params, 'steps');
+  validateRequiredField<unknown[]>(steps, 'steps', path);
+
+  if (steps.length === 0) {
+    throw new ConfigValidationError('steps ne peut pas être vide', `${path}.steps`);
+  }
+
+  // Valider chaque étape de la boucle
+  steps.forEach((step, index) => {
+    validateStep(step, index, `${scraperName}.loop[${stepIndex}]`);
+  });
+
+  const max_iterations = getNumberProp(params, 'max_iterations');
+  if (max_iterations !== undefined && typeof max_iterations !== 'number') {
+    throw new ConfigValidationError('max_iterations doit être un nombre', path);
+  }
+
+  const delayBetweenIterations = getNumberProp(params, 'delayBetweenIterations');
+  if (delayBetweenIterations !== undefined && typeof delayBetweenIterations !== 'number') {
+    throw new ConfigValidationError('delayBetweenIterations doit être un nombre', path);
+  }
+}
+
+/**
+ * Valide les paramètres d'une action navigate-back
+ */
+function validateNavigateBackParams(params: Record<string, unknown>, stepIndex: number, scraperName: string): void {
+  const path = `scrapers[${scraperName}].steps[${stepIndex}].params`;
+
+  const count = getNumberProp(params, 'count');
+  if (count !== undefined && typeof count !== 'number') {
+    throw new ConfigValidationError('count doit être un nombre', path);
+  }
+}
+
+/**
  * Valide une étape (step)
  */
 function validateStep(step: unknown, stepIndex: number, scraperName: string): void {
@@ -366,6 +409,12 @@ function validateStep(step: unknown, stepIndex: number, scraperName: string): vo
       break;
     case 'session-save':
       validateSessionSaveParams(params, stepIndex, scraperName);
+      break;
+    case 'loop':
+      validateLoopParams(params, stepIndex, scraperName);
+      break;
+    case 'navigate-back':
+      validateNavigateBackParams(params, stepIndex, scraperName);
       break;
   }
 }

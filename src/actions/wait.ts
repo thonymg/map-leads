@@ -34,7 +34,7 @@ export async function wait(params: WaitParams, page: Page): Promise<ActionResult
     if (selector !== undefined) {
       // Si le selector ressemble à [role=...] avec des espaces, utiliser getByRole
       const roleMatch = selector.match(/^\[role=(\w+)\s+(.*)\]$/);
-      if (roleMatch) {
+      if (roleMatch && roleMatch[1] && roleMatch[2]) {
         const [, role, text] = roleMatch;
         const locator = page.getByRole(role as any, { name: new RegExp(text, 'i') });
         await locator.waitFor({ timeout, state: 'visible' });

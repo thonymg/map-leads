@@ -19,6 +19,8 @@ import { fill } from './actions/fill.ts';
 import { extract } from './actions/extract.ts';
 import { paginate } from './actions/paginate.ts';
 import { sessionLoad, sessionSave } from './actions/login.ts';
+import { loop } from './actions/loop.ts';
+import { navigateBack } from './actions/navigate-back.ts';
 
 /**
  * Crée un résultat de scraper vide initialisé
@@ -75,6 +77,12 @@ async function executeStep(
         break;
       case 'session-save':
         result = await sessionSave(params as unknown as import('./types').SessionSaveParams, page);
+        break;
+      case 'loop':
+        result = await loop(params as unknown as import('./types').LoopParams, page);
+        break;
+      case 'navigate-back':
+        result = await navigateBack(params as unknown as import('./types').NavigateBackParams, page);
         break;
       default:
         throw new Error(`Action inconnue: ${action}`);
