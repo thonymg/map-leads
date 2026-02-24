@@ -6,30 +6,38 @@ out
 dist
 *.tgz
 
-# code coverage
-coverage
-*.lcov
-
 # logs
 logs
-_.log
-report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+*.log
+report.*.json
 
 # dotenv environment variable files
 .env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+.env.*.local
+
+# Sessions (credentials!)
+sessions/
+*.session.json
+*cookies.json
+
+# code coverage
+coverage
+*.lcov
 
 # caches
 .eslintcache
 .cache
 *.tsbuildinfo
 
-# IntelliJ based IDEs
+# IntelliJ
 .idea
 
-# Finder (MacOS) folder config
+# MacOS
 .DS_Store
-results 
+
+# Results
+results/
+
+# Playwright
+playwright-report/
+playwright/.cache/

@@ -1,102 +1,111 @@
-# Dossier Scrappe — Configurations de Scraping
+# 📁 Configurations Scrappe
 
-Ce dossier contient les fichiers de configuration pour chaque site à scraper.
+**Fichiers de configuration YAML pour chaque site**
 
-## Structure des fichiers
+---
 
-Chaque fichier de configuration suit le format : `[nomdedomaine].scrappe.yaml`
+## 📋 Format
 
-### Exemples :
-- `books.toscrape.com.scrappe.yaml` — Scraper pour books.toscrape.com
-- `quotes.toscrape.com.scrappe.yaml` — Scraper pour quotes.toscrape.com
-- `example.com.scrappe.yaml` — Scraper pour example.com
+`[nomdedomaine].scrappe.yaml`
 
-## Utilisation
+---
 
-### Lancer tous les scrapers
+## 🚀 Usage
+
 ```bash
-npm run scrape
-```
+# Lancer un scraper
+npm run scrape -- --file <fichier>.scrappe.yaml
 
-### Lister les configurations disponibles
-```bash
+# Lister les configurations
 npm run scrape -- --list
 ```
 
-### Lancer un fichier spécifique
+---
+
+## 📝 Structure
+
+```yaml
+name: mon-scraper
+url: https://example.com
+headless: true
+
+steps:
+  - action: navigate
+    params:
+      url: https://example.com
+  
+  - action: wait
+    params:
+      selector: .content
+  
+  - action: extract
+    params:
+      selector: .item
+      fields:
+        - name: title
+          selector: h2
+```
+
+---
+
+## 🔐 Avec Authentification
+
+```yaml
+name: linkedin-scraper
+url: https://www.linkedin.com/
+headless: false
+
+session:
+  enabled: true
+  name: linkedin_session
+
+steps:
+  - action: session-load
+    params:
+      sessionName: linkedin_session
+  
+  - action: navigate
+    params:
+      url: https://www.linkedin.com/feed/
+  
+  - action: extract
+    params:
+      selector: div.feed-update
+      fields:
+        - name: author
+          selector: span.update-actor__name
+```
+
+---
+
+## 📊 Actions
+
+| Action | Description |
+|--------|-------------|
+| `navigate` | Navigation URL |
+| `wait` | Attente élément |
+| `click` | Clic |
+| `fill` | Remplir champ |
+| `extract` | Extraire données |
+| `paginate` | Pagination |
+| `session-load` | Charger session |
+
+---
+
+## 🎯 Exemples
+
+### LinkedIn
+
+```bash
+npm run scrape -- --file linkedin.auth.scrappe.yaml
+```
+
+### Books (test)
+
 ```bash
 npm run scrape -- --file books.toscrape.com.scrappe.yaml
 ```
 
-### Lancer par domaine
-```bash
-npm run scrape -- --domain toscrape.com
-```
+---
 
-## Structure d'un fichier de configuration
-
-```yaml
-# Configuration globale
-concurrency: 2          # Nombre de scrapers en parallèle
-output_dir: ./results   # Dossier de sortie des résultats
-
-# Liste des scrapers à exécuter
-scrapers:
-  - name: mon-scraper           # Identifiant unique
-    url: https://example.com/   # URL de départ
-    headless: true              # Mode headless (optionnel)
-    viewport:                   # Dimensions du viewport (optionnel)
-      width: 1920
-      height: 1080
-    steps:                      # Séquence d'actions
-      - action: navigate
-        params:
-          url: https://example.com/
-          timeout: 30000
-      
-      - action: wait
-        params:
-          selector: .content
-          timeout: 10000
-      
-      - action: extract
-        params:
-          selector: .item
-          fields:
-            - name: title
-              selector: h2
-            - name: link
-              selector: a
-              attribute: href
-      
-      - action: paginate
-        params:
-          selector: .next-page
-          max_pages: 10
-```
-
-## Actions disponibles
-
-| Action | Description | Paramètres requis |
-|--------|-------------|-------------------|
-| `navigate` | Navigation vers une URL | `url` |
-| `wait` | Attente d'un élément ou durée | `selector` ou `duration` |
-| `click` | Clic sur un élément | `selector` |
-| `fill` | Remplir un champ | `selector`, `value` |
-| `extract` | Extraire des données | `selector`, `fields` |
-| `paginate` | Navigation multi-pages | `selector` |
-
-## Ajouter un nouveau scraper
-
-1. Créez un nouveau fichier `[domaine].scrappe.yaml` dans ce dossier
-2. Définissez la configuration selon la structure ci-dessus
-3. Testez avec `npm run scrape -- --file [domaine].scrappe.yaml`
-
-## Résultats
-
-Les résultats sont sauvegardés dans le dossier `./results` sous forme de fichiers JSON horodatés :
-- `{nom}-{timestamp}.json`
-
-Chaque fichier contient :
-- Métadonnées d'exécution (durée, nombre de pages, erreurs)
-- Tableau de données extraites
+**Créé le:** 24 février 2026

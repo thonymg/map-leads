@@ -6,6 +6,12 @@
   "scripts": {
     "start": "node --experimental-strip-types index.ts",
     "scrape": "node --experimental-strip-types scrape.ts",
+    "auth": "node --experimental-strip-types scripts/auth-ui.ts",
+    "record": "npx playwright test --ui",
+    "record:output": "npx playwright test --ui --output=./recordings/output",
+    "convert": "node --experimental-strip-types src/converter/index.ts",
+    "convert:all": "node --experimental-strip-types -e \"import { convertDirectory } from './src/converter/index.ts'; convertDirectory({ inputDir: './recordings', outputDir: './scrappe', optimizeSelectors: true });\"",
+    "session:export": "node --experimental-strip-types scripts/export-linkedin-session.ts",
     "test": "bun test",
     "test:unit": "bun test tests/unit/",
     "test:integration": "bun test tests/integration/",
@@ -18,6 +24,7 @@
     "typecheck:tests": "tsc --noEmit -p tests/tsconfig.json"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/bun": "latest",
     "@types/node": "latest",
     "bun-types": "latest"

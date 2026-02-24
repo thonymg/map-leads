@@ -1,0 +1,419 @@
+/**
+ * Action Mapper
+ * Convertit les statements TypeScript en actions YAML
+ */
+
+import * as ts from 'typescript';
+import type { ConvertedStep, ConvertedConfig } from './types.ts';
+import { PlaywrightCodeParser } from './parser.ts';
+import { SelectorOptimizer } from './optimizer.ts';
+
+/**
+ * Mappeur de code Playwright vers actions YAML
+ */
+export class ActionMapper {
+  private parser: PlaywrightCodeParser;
+  private optimizer: SelectorOptimizer;
+  private variableMap: Map<string, string> = new Map();
+
+  constructor(parser: PlaywrightCodeParser) {
+    this.parser = parser;
+    this.optimizer = new SelectorOptimizer();
+  }
+
+  /**
+   * Mappe tous les statements vers des étapes YAML
+   */
+  mapStatements(statements: ts.Statement[]): ConvertedStep[] {
+    const steps: ConvertedStep[] = [];
+    let pendingLocator: string | null = null;
+
+    for (const stmt of statements) {
+      const step = this.mapStatement(stmt, pendingLocator);
+      
+      if (step) {
+        // Si on a un locator en attente, l'ajouter au selector
+        if (pendingLocator && step.params.selector) {
+          step.params.selector = `${pendingLocator} ${step.params.selector}`;
+          pendingLocator = null;
+        }
+        
+        steps.push(step);
+      }
+
+      // Mémoriser les locators définis dans des variables
+      const varStep = this.extractVariableLocator(stmt);
+      if (varStep) {
+        pendingLocator = varStep;
+      }
+    }
+
+    return steps;
+  }
+
+  /**
+   * Mappe un statement individuel vers une étape YAML
+   */
+  private mapStatement(stmt: ts.Statement, pendingLocator?: string | null): ConvertedStep | null {
+    // Navigation: page.goto()
+    if (this.parser.isPageGotoCall(stmt)) {
+      return this.mapNavigate(stmt);
+    }
+
+    // Attente: locator().waitFor() ou page.waitForSelector()
+    if (this.isWaitStatement(stmt)) {
+      return this.mapWait(stmt);
+    }
+
+    // Clic: locator().click()
+    if (this.isClickStatement(stmt)) {
+      return this.mapClick(stmt, pendingLocator);
+    }
+
+    // Remplissage: locator().fill()
+    if (this.isFillStatement(stmt)) {
+      return this.mapFill(stmt, pendingLocator);
+    }
+
+    // Extraction: boucle for avec textContent()
+    if (this.parser.isForLoop(stmt)) {
+      return this.mapExtractOrPaginate(stmt);
+    }
+
+    // Condition: if avec isVisible()
+    if (this.parser.isIfStatement(stmt)) {
+      return this.mapConditional(stmt);
+    }
+
+    return null;
+  }
+
+  /**
+   * Mappe page.goto() vers navigate
+   */
+  private mapNavigate(stmt: ts.Statement): ConvertedStep {
+    const call = (stmt as ts.ExpressionStatement).expression as ts.CallExpression;
+    const url = this.parser.extractUrlFromGoto(stmt as ts.ExpressionStatement);
+    const timeout = this.parser.extractTimeoutFromCall(call);
+
+    return {
+      action: 'navigate',
+      params: {
+        url: url || '',
+        ...(timeout && { timeout }),
+      },
+    };
+  }
+
+  /**
+   * Mappe locator().waitFor() vers wait
+   */
+  private mapWait(stmt: ts.Statement): ConvertedStep {
+    const call = (stmt as ts.ExpressionStatement).expression as ts.CallExpression;
+    const selector = this.parser.extractSelectorChain(call.expression);
+    const timeout = this.parser.extractTimeoutFromCall(call);
+
+    return {
+      action: 'wait',
+      params: {
+        selector: selector || '',
+        ...(timeout && { timeout }),
+      },
+    };
+  }
+
+  /**
+   * Mappe locator().click() vers click
+   */
+  private mapClick(stmt: ts.Statement, pendingLocator?: string | null): ConvertedStep {
+    const call = (stmt as ts.ExpressionStatement).expression as ts.CallExpression;
+    let selector = this.parser.extractSelectorChain(call.expression);
+    const timeout = this.parser.extractTimeoutFromCall(call);
+
+    // Combiner avec le locator en attente
+    if (pendingLocator && selector) {
+      selector = `${pendingLocator} ${selector}`;
+    }
+
+    return {
+      action: 'click',
+      params: {
+        selector: selector || '',
+        ...(timeout && { timeout }),
+      },
+      options: {
+        optional: true, // Les clics sont optionnels par défaut
+      },
+    };
+  }
+
+  /**
+   * Mappe locator().fill() vers fill
+   */
+  private mapFill(stmt: ts.Statement, pendingLocator?: string | null): ConvertedStep {
+    const call = (stmt as ts.ExpressionStatement).expression as ts.CallExpression;
+    let selector = this.parser.extractSelectorChain(call.expression);
+    const value = this.parser.extractValueFromFill(call);
+    const timeout = this.parser.extractTimeoutFromCall(call);
+
+    // Combiner avec le locator en attente
+    if (pendingLocator && selector) {
+      selector = `${pendingLocator} ${selector}`;
+    }
+
+    return {
+      action: 'fill',
+      params: {
+        selector: selector || '',
+        value: value || '',
+        ...(timeout && { timeout }),
+      },
+    };
+  }
+
+  /**
+   * Mappe une boucle for vers extract ou paginate
+   */
+  private mapExtractOrPaginate(stmt: ts.ForStatement): ConvertedStep | null {
+    // Analyser le corps de la boucle
+    const fields: { name: string; selector: string; attribute?: string }[] = [];
+    let containerSelector: string | null = null;
+    let hasPagination = false;
+
+    if (ts.isBlock(stmt.statement)) {
+      for (const child of stmt.statement.statements) {
+        // Chercher les extractions: const x = await item.locator('sel').textContent()
+        if (ts.isVariableStatement(child)) {
+          for (const decl of child.declarationList.declarations) {
+            if (decl.initializer && ts.isAwaitExpression(decl.initializer)) {
+              const inner = decl.initializer.expression;
+              if (ts.isCallExpression(inner)) {
+                // textContent() ou getAttribute()
+                if (this.parser.isTextContentCall(inner) || this.parser.isGetAttributeCall(inner)) {
+                  const selector = this.parser.extractSelectorChain(inner.expression);
+                  const name = decl.name.getText(this.parser['sourceFile']).replace(/const\s+/, '');
+                  const attribute = this.parser.isGetAttributeCall(inner) 
+                    ? this.parser.extractAttributeName(inner) || undefined 
+                    : undefined;
+                  
+                  if (selector) {
+                    fields.push({ name, selector, attribute });
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Chercher la pagination: if (await nextBtn.isVisible()) { nextBtn.click() }
+        if (ts.isIfStatement(child)) {
+          hasPagination = true;
+        }
+      }
+    }
+
+    // Extraire le sélecteur du conteneur depuis la condition de la boucle
+    containerSelector = this.extractContainerSelector(stmt);
+
+    if (fields.length > 0 && containerSelector) {
+      if (hasPagination) {
+        // C'est une pagination
+        return {
+          action: 'paginate',
+          params: {
+            selector: 'li.next a', // Sélecteur par défaut pour "suivant"
+            max_pages: 10,
+            itemSelector: containerSelector,
+            fields,
+          },
+        };
+      } else {
+        // C'est une extraction simple
+        return {
+          action: 'extract',
+          params: {
+            selector: containerSelector,
+            fields,
+          },
+        };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Extrait le sélecteur du conteneur depuis une boucle for
+   */
+  private extractContainerSelector(stmt: ts.ForStatement): string | null {
+    // Pattern: for (let i = 0; i < items.count(); i++) { items.nth(i) }
+    // On cherche la variable utilisée dans la boucle
+    
+    const init = stmt.initializer;
+    if (!init || !ts.isVariableDeclarationList(init)) return null;
+
+    // Analyser le corps pour trouver le locator principal
+    if (ts.isBlock(stmt.statement)) {
+      for (const child of stmt.statement.statements) {
+        if (ts.isVariableStatement(child)) {
+          for (const decl of child.declarationList.declarations) {
+            if (decl.initializer && ts.isCallExpression(decl.initializer)) {
+              const expr = decl.initializer.expression;
+              if (ts.isPropertyAccessExpression(expr) && expr.name.text === 'nth') {
+                // Trouver le locator de base
+                const baseExpr = expr.expression;
+                if (ts.isIdentifier(baseExpr)) {
+                  // C'est une variable, retourner un sélecteur générique
+                  return '.item';
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Mappe une condition if vers une étape optionnelle
+   */
+  private mapConditional(stmt: ts.IfStatement): ConvertedStep | null {
+    // if (await locator.isVisible()) { locator.click() }
+    const condition = stmt.expression;
+    
+    if (ts.isAwaitExpression(condition)) {
+      const call = condition.expression;
+      if (ts.isCallExpression(call) && this.parser.isIsVisibleCall(call)) {
+        const selector = this.parser.extractSelectorChain(call.expression);
+        
+        // Vérifier le corps du if
+        if (ts.isBlock(stmt.thenStatement)) {
+          for (const child of stmt.thenStatement.statements) {
+            if (this.isClickStatement(child)) {
+              return {
+                action: 'click',
+                params: {
+                  selector: selector || '',
+                },
+                options: {
+                  optional: true,
+                  timeout: 2000,
+                },
+              };
+            }
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Extrait un locator depuis une déclaration de variable
+   */
+  private extractVariableLocator(stmt: ts.Statement): string | null {
+    if (ts.isVariableStatement(stmt)) {
+      for (const decl of stmt.declarationList.declarations) {
+        if (decl.initializer && ts.isCallExpression(decl.initializer)) {
+          const expr = decl.initializer.expression;
+          if (ts.isPropertyAccessExpression(expr) && expr.name.text === 'locator') {
+            return this.parser.extractSelectorFromLocator(decl.initializer);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Vérifie si un statement est une attente
+   */
+  private isWaitStatement(stmt: ts.Statement): boolean {
+    if (ts.isExpressionStatement(stmt)) {
+      const call = stmt.expression;
+      if (ts.isCallExpression(call)) {
+        const expr = call.expression;
+        if (ts.isPropertyAccessExpression(expr)) {
+          return expr.name.text === 'waitFor';
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Vérifie si un statement est un clic
+   */
+  private isClickStatement(stmt: ts.Statement): boolean {
+    if (ts.isExpressionStatement(stmt)) {
+      const call = stmt.expression;
+      if (ts.isCallExpression(call)) {
+        const expr = call.expression;
+        if (ts.isPropertyAccessExpression(expr)) {
+          return expr.name.text === 'click';
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Vérifie si un statement est un fill
+   */
+  private isFillStatement(stmt: ts.Statement): boolean {
+    if (ts.isExpressionStatement(stmt)) {
+      const call = stmt.expression;
+      if (ts.isCallExpression(call)) {
+        const expr = call.expression;
+        if (ts.isPropertyAccessExpression(expr)) {
+          return expr.name.text === 'fill';
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Applique l'optimisation aux étapes
+   */
+  optimizeSteps(steps: ConvertedStep[]): ConvertedStep[] {
+    return steps.map(step => ({
+      ...step,
+      params: this.optimizer.optimizeParams(step.params),
+    }));
+  }
+}
+
+/**
+ * Génère un nom de scraper depuis le nom de fichier
+ */
+export function generateScraperName(filename: string): string {
+  return filename
+    .replace('.ts', '')
+    .replace('.js', '')
+    .replace(/[-_]/g, ' ')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+    .toLowerCase()
+    .replace(/\s+/g, '-');
+}
+
+/**
+ * Extrait l'URL de base depuis les étapes
+ */
+export function extractBaseUrl(steps: ConvertedStep[]): string {
+  const navigateStep = steps.find(s => s.action === 'navigate');
+  if (navigateStep && typeof navigateStep.params.url === 'string') {
+    try {
+      const url = new URL(navigateStep.params.url);
+      return `${url.protocol}//${url.host}/`;
+    } catch {
+      return navigateStep.params.url;
+    }
+  }
+  return 'https://example.com';
+}
