@@ -4,6 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "start": "node --experimental-strip-types index.ts",
+    "scrape": "node --experimental-strip-types scrape.ts",
     "test": "bun test",
     "test:unit": "bun test tests/unit/",
     "test:integration": "bun test tests/integration/",
@@ -24,7 +26,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "playwright": "^1.49.0",
+    "playwright": "^1.58.2",
     "yaml": "^2.7.0",
     "p-limit": "^6.2.0"
   }

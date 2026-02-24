@@ -14,22 +14,44 @@ bun install
 bunx playwright install chromium
 ```
 
-### Configuration
+### ⚠️ Important : Exécution avec Node.js
 
-Copiez le fichier d'exemple et adaptez-le :
-
-```bash
-cp .env.example .env
-```
-
-### Exécution
+**Note :** En raison d'un problème de compatibilité entre Bun et Playwright sur Windows, utilisez **Node.js** pour exécuter les scrapers :
 
 ```bash
-# Lancer le scraper
-bun run index.ts
+# Lancer un scraper (recommandé)
+npm run scrape
+
+# Ou directement avec Node.js
+node --experimental-strip-types scrape.ts
 ```
 
 ## 📋 Commandes Disponibles
+
+### Scraping
+
+| Commande | Description |
+|----------|-------------|
+| `npm run scrape` | Lance tous les scrapers du dossier `./scrappe` |
+| `npm run scrape -- --list` | Liste les configurations disponibles |
+| `npm run scrape -- --file <fichier>` | Lance un fichier spécifique |
+| `npm run scrape -- --domain <domaine>` | Lance tous les scrapers d'un domaine |
+
+**Exemples :**
+
+```bash
+# Lister les configurations
+npm run scrape -- --list
+
+# Lancer un scraper spécifique
+npm run scrape -- --file books.toscrape.com.scrappe.yaml
+
+# Lancer par domaine
+npm run scrape -- --domain toscrape.com
+
+# Lancer tous les scrapers
+npm run scrape
+```
 
 ### Tests
 
@@ -46,7 +68,7 @@ bun run index.ts
 
 | Commande | Description |
 |----------|-------------|
-| `bun run typecheck` | Vérification des types |
+| `tsc --noEmit` | Vérification des types |
 | `bun install` | Installation des dépendances |
 
 ## 📁 Structure du Projet
@@ -54,11 +76,15 @@ bun run index.ts
 ```
 mapleads/
 ├── src/
-│   ├── index.ts              ← Point d'entrée
+│   ├── index.ts              ← Point d'entrée (config classique)
+│   ├── scrape.ts             ← Script de lancement des scrapers
 │   ├── orchestrator.ts       ← Orchestration des scrapers
 │   ├── runner.ts             ← Exécution des parcours
 │   ├── types.ts              ← Types TypeScript
 │   ├── storage.ts            ← Sauvegarde des résultats
+│   ├── config.ts             ← Chargement configuration YAML
+│   ├── logger.ts             ← Logs structurés
+│   ├── retry.ts              ← Retry automatique
 │   └── actions/
 │       ├── navigate.ts       ← Navigation URL
 │       ├── wait.ts           ← Attente sélecteur
@@ -66,6 +92,10 @@ mapleads/
 │       ├── fill.ts           ← Remplissage champ
 │       ├── extract.ts        ← Extraction données
 │       └── paginate.ts       ← Pagination
+├── scrappe/                  ← Configurations de scraping (*.scrappe.yaml)
+│   ├── README.md
+│   ├── books.toscrape.com.scrappe.yaml
+│   └── quotes.toscrape.com.scrappe.yaml
 ├── tests/
 │   ├── setup.ts              ← Configuration des tests
 │   ├── fixtures/
@@ -79,7 +109,7 @@ mapleads/
 │   │   └── config-validation.test.ts
 │   └── integration/
 │       └── robustness.test.ts
-├── scraper.config.yaml       ← Configuration des scrapers
+├── scraper.config.yaml       ← Configuration classique
 ├── results/                  ← Résultats JSON
 ├── logs/                     ← Logs d'exécution
 ├── package.json
@@ -87,51 +117,84 @@ mapleads/
 └── bunfig.toml
 ```
 
+## 🗂️ Dossier Scrappe
+
+Le dossier `./scrappe` contient les configurations de scraping pour chaque site.
+
+### Format des fichiers
+
+Chaque fichier suit le format : `[nomdedomaine].scrappe.yaml`
+
+**Exemple :** `books.toscrape.com.scrappe.yaml`
+
+```yaml
+# Configuration globale
+concurrency: 2          # Nombre de scrapers en parallèle
+output_dir: ./results   # Dossier de sortie
+
+# Liste des scrapers
+scrapers:
+  - name: books-demo
+    url: https://books.toscrape.com/
+    headless: true
+    viewport:
+      width: 1920
+      height: 1080
+    steps:
+      - action: navigate
+        params:
+          url: https://books.toscrape.com/
+          timeout: 30000
+      
+      - action: wait
+        params:
+          selector: article.product_pod
+          timeout: 10000
+      
+      - action: extract
+        params:
+          selector: article.product_pod
+          fields:
+            - name: title
+              selector: h3 a
+              attribute: title
+            - name: price
+              selector: p.price_color
+            - name: availability
+              selector: p.instock.availability
+      
+      - action: paginate
+        params:
+          selector: li.next a
+          max_pages: 5
+```
+
+### Ajouter un nouveau scraper
+
+1. Créez un fichier `[domaine].scrappe.yaml` dans `./scrappe/`
+2. Définissez la configuration
+3. Testez avec : `npm run scrape -- --file [domaine].scrappe.yaml`
+
 ## 📖 Documentation
 
 | Document | Description |
 |----------|-------------|
+| [scrappe/README.md](./scrappe/README.md) | Guide du dossier scrappe |
 | [TESTS.md](./TESTS.md) | Guide complet des tests |
 | [DEVELOPPEMENT.md](./DEVELOPPEMENT.md) | Document de développement |
 | [architecture.md](./architecture.md) | Architecture du projet |
 | [acceptation.md](./acceptation.md) | Critères d'acceptation |
-| [tests/README.md](./tests/README.md) | README des tests |
 
-## ⚙️ Configuration YAML
+## ⚙️ Actions Disponibles
 
-Exemple de configuration :
-
-```yaml
-concurrency: 5
-output_dir: "./results"
-
-scrapers:
-  - name: example-scraper
-    url: https://example.com
-    headless: true
-    viewport:
-      width: 1280
-      height: 800
-    steps:
-      - action: navigate
-        params:
-          url: https://example.com
-      - action: wait
-        params:
-          selector: ".content"
-      - action: extract
-        params:
-          selector: ".item"
-          fields:
-            - name: title
-              selector: ".title"
-            - name: price
-              selector: ".price"
-      - action: paginate
-        params:
-          selector: ".next"
-          max_pages: 10
-```
+| Action | Description | Paramètres requis |
+|--------|-------------|-------------------|
+| `navigate` | Navigation vers une URL | `url` |
+| `wait` | Attente d'un élément ou durée | `selector` ou `duration` |
+| `click` | Clic sur un élément | `selector` |
+| `fill` | Remplir un champ | `selector`, `value` |
+| `extract` | Extraire des données | `selector`, `fields` |
+| `paginate` | Navigation multi-pages | `selector` |
 
 ## 🧪 Tests
 
@@ -161,13 +224,82 @@ bun run test:coverage
 
 **Total: ~250+ tests**
 
+## 📊 Résultats
+
+Les résultats sont sauvegardés dans `./results/` sous forme de fichiers JSON horodatés :
+
+```
+results/
+├── books-demo-2026-02-24T12-09-19.json
+└── quotes-demo-2026-02-24T12-11-08.json
+```
+
+Chaque fichier contient :
+- Métadonnées d'exécution (durée, nombre de pages, erreurs)
+- Tableau de données extraites
+
+**Exemple de résultat :**
+
+```json
+{
+  "name": "books-demo",
+  "url": "https://books.toscrape.com/",
+  "startedAt": "2026-02-24T12:09:19.674Z",
+  "completedAt": "2026-02-24T12:09:32.561Z",
+  "duration": 12887,
+  "success": true,
+  "pageCount": 10,
+  "recordCount": 120,
+  "data": [
+    {
+      "title": "A Light in the Attic",
+      "price": "£51.77",
+      "availability": "In stock",
+      "link": "catalogue/a-light-in-the-attic_1000/index.html"
+    }
+  ],
+  "errors": []
+}
+```
+
 ## 🔧 Dépendances
 
 | Dépendance | Version | Usage |
 |------------|---------|-------|
-| `playwright` | ^1.49.0 | Automatisation navigateur |
+| `playwright` | ^1.58.2 | Automatisation navigateur |
 | `yaml` | ^2.7.0 | Parsing configuration |
 | `p-limit` | ^6.2.0 | Limitation concurrence |
+
+## 🛠️ Dépannage
+
+### Playwright ne s'ouvre pas avec Bun
+
+**Problème :** Le navigateur ne se lance pas avec `bun run`
+
+**Solution :** Utilisez Node.js à la place :
+
+```bash
+npm run scrape
+```
+
+### Erreur de navigation / timeout
+
+**Solution :** Augmentez le timeout dans la configuration :
+
+```yaml
+- action: navigate
+  params:
+    url: https://example.com
+    timeout: 60000  # 60 secondes
+```
+
+### Fichiers de configuration non trouvés
+
+Vérifiez que vos fichiers sont dans le bon dossier :
+
+```bash
+ls scrappe/*.scrappe.yaml
+```
 
 ## 📝 Licence
 
@@ -175,4 +307,4 @@ Propriétaire — MapLeads 2026
 
 ---
 
-**Créé avec Bun** — Fast all-in-one JavaScript runtime
+**Créé avec Bun & Node.js** — Runtime JavaScript et Playwright pour l'automatisation

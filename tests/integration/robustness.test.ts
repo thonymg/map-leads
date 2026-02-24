@@ -541,9 +541,9 @@ describe("Robustesse - CA-39: Timeout global par scraper", () => {
 
       // Act - Exécution concurrente avec timeout individuel
       const results = await Promise.allSettled([
-        executeWithTimeout(fastScraper("fast-1"), timeout),
-        executeWithTimeout(slowScraper("slow-1"), timeout),
-        executeWithTimeout(fastScraper("fast-2"), timeout),
+        executeWithTimeout(() => fastScraper("fast-1"), timeout),
+        executeWithTimeout(() => slowScraper("slow-1"), timeout),
+        executeWithTimeout(() => fastScraper("fast-2"), timeout),
       ]);
 
       // Assert - Au moins 2 scrapers rapides devraient réussir

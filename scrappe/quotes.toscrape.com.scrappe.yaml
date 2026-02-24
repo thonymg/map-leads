@@ -1,0 +1,54 @@
+# Scraper Configuration — quotes.toscrape.com
+# MapLeads - Scraper Web Modulaire
+
+# Configuration globale
+concurrency: 2
+output_dir: ./results
+
+# Liste des scrapers à exécuter
+scrapers:
+  # Scraper: Citations à scraper
+  - name: quotes-demo
+    url: https://quotes.toscrape.com/
+    headless: true
+    viewport:
+      width: 1920
+      height: 1080
+    steps:
+      # Navigation vers la page d'accueil
+      - action: navigate
+        params:
+          url: https://quotes.toscrape.com/
+          timeout: 30000
+
+      # Attendre que les citations soient chargées
+      - action: wait
+        params:
+          selector: div.quote
+          timeout: 10000
+
+      # Extraire les citations
+      - action: extract
+        params:
+          selector: div.quote
+          fields:
+            - name: text
+              selector: span.text
+            - name: author
+              selector: small.author
+            - name: tags
+              selector: div.tags a.tag
+
+      # Pagination pour parcourir toutes les pages
+      - action: paginate
+        params:
+          selector: li.next a
+          max_pages: 3
+          itemSelector: div.quote
+          fields:
+            - name: text
+              selector: span.text
+            - name: author
+              selector: small.author
+            - name: tags
+              selector: div.tags a.tag
