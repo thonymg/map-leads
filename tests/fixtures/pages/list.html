@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liste d'Éléments</title>
+</head>
+<body>
+  <h1 id="page-title">Liste de Produits</h1>
+
+  <div id="products-list" class="items-container">
+    <article class="item" data-id="1">
+      <h2 class="item-title">Produit Alpha</h2>
+      <p class="item-description">Description du produit Alpha</p>
+      <span class="item-price" data-currency="EUR">29.99</span>
+      <span class="item-category">Électronique</span>
+      <a href="/product/1" class="item-link">Voir détails</a>
+      <img src="/images/product1.jpg" alt="Produit Alpha" class="item-image">
+      <span class="item-stock" data-available="true">En stock</span>
+    </article>
+
+    <article class="item" data-id="2">
+      <h2 class="item-title">Produit Bêta</h2>
+      <p class="item-description">Description du produit Bêta</p>
+      <span class="item-price" data-currency="EUR">49.99</span>
+      <span class="item-category">Maison</span>
+      <a href="/product/2" class="item-link">Voir détails</a>
+      <img src="/images/product2.jpg" alt="Produit Bêta" class="item-image">
+      <span class="item-stock" data-available="true">En stock</span>
+    </article>
+
+    <article class="item" data-id="3">
+      <h2 class="item-title">Produit Gamma</h2>
+      <p class="item-description">Description du produit Gamma</p>
+      <span class="item-price" data-currency="EUR">19.99</span>
+      <span class="item-category">Livres</span>
+      <a href="/product/3" class="item-link">Voir détails</a>
+      <img src="/images/product3.jpg" alt="Produit Gamma" class="item-image">
+      <span class="item-stock" data-available="false">Rupture</span>
+    </article>
+
+    <article class="item" data-id="4">
+      <h2 class="item-title">Produit Delta</h2>
+      <p class="item-description"></p>
+      <span class="item-price" data-currency="EUR">99.99</span>
+      <span class="item-category">Électronique</span>
+      <a href="/product/4" class="item-link">Voir détails</a>
+      <img src="/images/product4.jpg" alt="Produit Delta" class="item-image">
+    </article>
+
+    <article class="item" data-id="5">
+      <h2 class="item-title"></h2>
+      <p class="item-description">Produit sans titre</p>
+      <span class="item-price" data-currency="EUR">9.99</span>
+      <span class="item-category">Accessoires</span>
+      <a href="/product/5" class="item-link">Voir détails</a>
+    </article>
+  </div>
+
+  <div id="empty-list" class="items-container" style="display:none;">
+    <p class="empty-message">Aucun élément trouvé</p>
+  </div>
+
+  <footer>
+    <p>Total: <span id="total-items">5</span> produits</p>
+  </footer>
+</body>
+</html>

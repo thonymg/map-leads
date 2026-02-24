@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page de Test Simple</title>
+</head>
+<body>
+  <header>
+    <h1 id="main-title">Bienvenue sur la page de test</h1>
+    <p class="subtitle">Cette page sert aux tests de navigation et d'extraction</p>
+  </header>
+
+  <nav>
+    <ul>
+      <li><a href="/simple.html" id="link-home">Accueil</a></li>
+      <li><a href="/form.html" id="link-form">Formulaire</a></li>
+      <li><a href="/list.html" id="link-list">Liste</a></li>
+      <li><a href="/pagination.html" id="link-pagination">Pagination</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <section id="content">
+      <h2>Section de contenu</h2>
+      <p class="description">Ceci est un paragraphe de description.</p>
+      <div class="info-box" data-info="test-value">
+        <span class="label">Information:</span>
+        <span class="value">Valeur de test</span>
+      </div>
+    </section>
+
+    <section id="dynamic-content">
+      <button id="load-more" onclick="loadMore()">Charger plus</button>
+      <div id="dynamic-items"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 - Page de test pour scraper</p>
+  </footer>
+
+  <script>
+    function loadMore() {
+      const container = document.getElementById('dynamic-items');
+      for (let i = 0; i < 3; i++) {
+        const item = document.createElement('div');
+        item.className = 'dynamic-item';
+        item.textContent = 'Élément dynamique ' + (container.children.length + 1);
+        container.appendChild(item);
+      }
+    }
+  </script>
+</body>
+</html>

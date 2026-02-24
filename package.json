@@ -1,0 +1,31 @@
+{
+  "name": "mapleads",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "bun test",
+    "test:unit": "bun test tests/unit/",
+    "test:integration": "bun test tests/integration/",
+    "test:validation": "bun test tests/validation/",
+    "test:actions": "bun test tests/unit/actions/",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage",
+    "test:verbose": "bun test --verbose",
+    "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc --noEmit -p tests/tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "latest",
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0",
+    "yaml": "^2.7.0",
+    "p-limit": "^6.2.0"
+  }
+}

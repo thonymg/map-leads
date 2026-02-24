@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formulaire de Test</title>
+</head>
+<body>
+  <h1 id="page-title">Formulaire de Test</h1>
+
+  <form id="test-form" action="/submit" method="POST">
+    <div class="form-group">
+      <label for="username">Nom d'utilisateur:</label>
+      <input type="text" id="username" name="username" placeholder="Entrez votre nom" required>
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" placeholder="exemple@email.com">
+    </div>
+
+    <div class="form-group">
+      <label for="password">Mot de passe:</label>
+      <input type="password" id="password" name="password">
+    </div>
+
+    <div class="form-group">
+      <label for="category">Catégorie:</label>
+      <select id="category" name="category">
+        <option value="">Sélectionnez...</option>
+        <option value="cat1">Catégorie 1</option>
+        <option value="cat2">Catégorie 2</option>
+        <option value="cat3">Catégorie 3</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="message">Message:</label>
+      <textarea id="message" name="message" rows="4"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>
+        <input type="checkbox" id="accept-terms" name="accept-terms">
+        J'accepte les conditions
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" id="submit-btn">Envoyer</button>
+      <button type="reset" id="reset-btn">Réinitialiser</button>
+      <button type="button" id="cancel-btn">Annuler</button>
+    </div>
+  </form>
+
+  <div id="form-result"></div>
+
+  <script>
+    document.getElementById('test-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const result = document.getElementById('form-result');
+      result.innerHTML = '<p class="success">Formulaire soumis avec succès!</p>';
+    });
+  </script>
+</body>
+</html>

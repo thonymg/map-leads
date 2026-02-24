@@ -1,0 +1,31 @@
+[bun-test]
+# Configuration des tests Bun
+
+# Timeout par défaut (5 secondes)
+timeout = 5000
+
+# Fichiers à inclure
+test = {
+  include = ["**/*.test.ts"],
+  exclude = [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/results/**",
+    "**/logs/**",
+  ]
+}
+
+# Configuration de la couverture de code
+coverage = {
+  enabled = false,
+  coverageDir = "./coverage",
+  include = ["src/**/*.{ts,js}"],
+  exclude = [
+    "**/*.test.ts",
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/coverage/**",
+  ],
+  reporter = ["text", "json", "html"]
+}
