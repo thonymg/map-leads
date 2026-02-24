@@ -32,27 +32,28 @@ interface ClickResult {
 // Implémentation mockée de l'action click pour les tests
 async function click(params: ClickParams, page: typeof mockPage): Promise<ClickResult> {
   const { selector, timeout = 30000, force = false } = params;
-  
+
   try {
     // Tenter de cliquer sur l'élément
     await page.click(selector, { timeout });
-    
+
     return {
       success: true,
       clicked: true,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    
-    // Si force est true ou si c'est une erreur "élément non trouvé", on tolère
-    if (force || errorMessage.includes("not found") || errorMessage.includes("visible")) {
+
+    // Si force est true, on tolère l'erreur
+    if (force) {
       return {
         success: true,
         clicked: false,
         warning: `Element "${selector}" not found, continuing...`,
       };
     }
-    
+
+    // Sinon on propage l'erreur
     return {
       success: false,
       clicked: false,
@@ -260,13 +261,13 @@ describe("Action click", () => {
         new Error(`Element "${selector}" is not visible`)
       );
 
-      // Act
+      // Act - Avec force=true, on tolère l'erreur
       const result = await click({ selector, force: true }, testPage);
 
       // Assert
       expect(result.success).toBe(true);
       expect(result.clicked).toBe(false);
-      expect(result.warning).toContain("not found");
+      expect(result.warning).toContain("continuing");
     });
 
     it("CA-11.4 - Sélecteur avec XPath inexistant", async () => {
