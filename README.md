@@ -13,6 +13,13 @@ bun install
 bunx playwright install chromium
 ```
 
+### Configuration (.env)
+
+```bash
+cp .env.example .env
+# Modifier les credentials dans .env
+```
+
 ### Authentification (Sites avec login)
 
 ```bash
@@ -49,38 +56,41 @@ mapleads/
 ├── src/
 │   ├── actions/         # Actions (navigate, click, extract...)
 │   ├── converter/       # Conversion UI → YAML
+│   ├── config-env.ts    # Gestion des variables d'environnement
 │   ├── session.ts       # Gestion des sessions
 │   └── types.ts         # Types partagés
 ├── scrappe/             # Configurations YAML
 ├── sessions/            # Sessions (gitignore)
 ├── results/             # Résultats JSON
 ├── recordings/          # Enregistrements UI
-└── scripts/
-    └── auth-ui.ts       # Script d'authentification
+├── scripts/
+│   └── auth-ui.ts       # Script d'authentification
+└── .env                 # Credentials (gitignore)
 ```
 
 ---
 
 ## 🔐 Authentification
 
-Pour les sites nécessitant un login (LinkedIn, Facebook...) :
+### 1. Créer le fichier .env
 
-### 1. Lancer l'authentification
+```bash
+cp .env.example .env
+```
+
+### 2. Lancer l'authentification
 
 ```bash
 npm run auth
 ```
 
-### 2. Suivre le guide
+### 3. Le script exporte automatiquement :
 
-- Entrez l'URL de connexion
-- Connectez-vous dans le navigateur
-- Le script exporte automatiquement :
-  - `.env` → Credentials (`[DOMAIN]_EMAIL`, `[DOMAIN]_PASS`)
-  - `sessions/[domain]_session.json` → Session
-  - `scrappe/[domain].auth.scrappe.yaml` → Configuration
+- `.env` → Credentials (`[DOMAIN]_EMAIL`, `[DOMAIN]_PASS`)
+- `sessions/[domain]_session.json` → Session
+- `scrappe/[domain].auth.scrappe.yaml` → Configuration
 
-### 3. Lancer le scraper
+### 4. Lancer le scraper
 
 ```bash
 npm run scrape -- --file linkedin.auth.scrappe.yaml
@@ -92,10 +102,11 @@ npm run scrape -- --file linkedin.auth.scrappe.yaml
 
 | Fichier | Description |
 |---------|-------------|
+| [PIPELINE.md](./PIPELINE.md) | **Flux complet du pipeline** |
+| [ENV.md](./ENV.md) | Variables d'environnement |
 | [scripts/README.md](./scripts/README.md) | Authentification UI |
 | [scrappe/README.md](./scrappe/README.md) | Configurations YAML |
 | [recordings/README.md](./recordings/README.md) | Enregistrement UI Mode |
-| [src/converter/README.md](./src/converter/README.md) | Conversion Code → YAML |
 
 ---
 
@@ -103,13 +114,13 @@ npm run scrape -- --file linkedin.auth.scrappe.yaml
 
 ```yaml
 name: mon-scraper
-url: https://example.com
+url: ${EXAMPLE_URL}  # Variable d'environnement
 headless: true
 
 steps:
   - action: navigate
     params:
-      url: https://example.com
+      url: ${EXAMPLE_URL}
   
   - action: wait
     params:
@@ -121,14 +132,6 @@ steps:
       fields:
         - name: title
           selector: h2
-        - name: link
-          selector: a
-          attribute: href
-  
-  - action: paginate
-    params:
-      selector: .next
-      max_pages: 10
 ```
 
 ---
@@ -171,15 +174,11 @@ npm run auth
 
 ### Erreur de navigation
 
-Vérifiez que les navigateurs sont installés :
-
 ```bash
 bunx playwright install chromium
 ```
 
 ### Fichier non trouvé
-
-Listez les configurations disponibles :
 
 ```bash
 npm run scrape -- --list

@@ -1,0 +1,44 @@
+# Configuration générée automatiquement
+# Site: https://www.linkedin.com/feed/
+# Généré le: 2026-02-24T14:55:24.579Z
+
+name: linkedin-auth-scraper
+url: ${LINKEDIN_URL}
+headless: false
+
+# Configuration de session
+session:
+  enabled: true
+  name: linkedin_session
+  file: C:\Users\Thony\Desktop\2026\mapleads\sessions\linkedin_session.json
+  validate: true
+
+scrapers:
+  - name: linkedin-scraper
+    url: ${LINKEDIN_URL}
+    steps:
+      # Charger la session
+      - action: session-load
+        params:
+          sessionName: linkedin_session
+          sessionsDir: ./sessions
+      
+      # Navigation vers la page protégée
+      - action: navigate
+        params:
+          url: ${LINKEDIN_URL}
+          timeout: 30000
+      
+      # Attendre le chargement
+      - action: wait
+        params:
+          selector: body
+          timeout: 10000
+      
+      # TODO: Ajoutez vos étapes d'extraction ici
+      - action: extract
+        params:
+          selector: body
+          fields:
+            - name: content
+              selector: body

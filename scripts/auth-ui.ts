@@ -12,9 +12,13 @@
  */
 
 import { chromium } from 'playwright';
-import { readFileSync, writeFileSync, existsSync, appendFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, appendFileSync, mkdirSync } from 'fs';
 import { join, parse } from 'path';
 import { createInterface } from 'readline';
+import { loadEnv } from '../src/config-env.ts';
+
+// Charger les variables d'environnement existantes
+loadEnv();
 
 /**
  * Interface pour les credentials
@@ -53,6 +57,21 @@ function extractDomain(url: string): string {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname.replace('www.', '');
     const parts = hostname.split('.');
+    
+    // Cas spéciaux : linkedin.com, facebook.com, etc.
+    const knownDomains: Record<string, string> = {
+      'linkedin': 'LINKEDIN',
+      'facebook': 'FACEBOOK',
+      'twitter': 'TWITTER',
+      'instagram': 'INSTAGRAM',
+    };
+    
+    // Chercher un domaine connu
+    for (const [key, value] of Object.entries(knownDomains)) {
+      if (hostname.includes(key)) {
+        return value;
+      }
+    }
     
     // Prend les deux dernières parties (ex: linkedin.com)
     if (parts.length >= 2) {
@@ -103,7 +122,6 @@ function saveCredentialsToEnv(credentials: Credentials): void {
  */
 async function saveSession(context: any, domain: string): Promise<string> {
   const sessionsDir = join(process.cwd(), 'sessions');
-  const { mkdirSync } = require('fs');
   
   // Créer le dossier sessions s'il n'existe pas
   if (!existsSync(sessionsDir)) {
@@ -134,11 +152,10 @@ async function saveSession(context: any, domain: string): Promise<string> {
 }
 
 /**
- * Génère un fichier de configuration YAML
+ * Génère un fichier de configuration YAML avec variables d'environnement
  */
 function generateYamlConfig(credentials: Credentials, sessionFile: string): string {
   const scrappeDir = join(process.cwd(), 'scrappe');
-  const { mkdirSync } = require('fs');
   
   if (!existsSync(scrappeDir)) {
     mkdirSync(scrappeDir, { recursive: true });
@@ -152,7 +169,7 @@ function generateYamlConfig(credentials: Credentials, sessionFile: string): stri
 # Généré le: ${new Date().toISOString()}
 
 name: ${domainName}-auth-scraper
-url: ${credentials.url}
+url: \${${credentials.domain}_URL}
 headless: false
 
 # Configuration de session
@@ -164,7 +181,7 @@ session:
 
 scrapers:
   - name: ${domainName}-scraper
-    url: ${credentials.url}
+    url: \${${credentials.domain}_URL}
     steps:
       # Charger la session
       - action: session-load
@@ -175,7 +192,7 @@ scrapers:
       # Navigation vers la page protégée
       - action: navigate
         params:
-          url: ${credentials.url}
+          url: \${${credentials.domain}_URL}
           timeout: 30000
       
       # Attendre le chargement
@@ -195,6 +212,7 @@ scrapers:
   
   writeFileSync(yamlFile, yamlContent, 'utf-8');
   console.log(`✅ Configuration YAML générée: ${yamlFile}`);
+  console.log(`   Les variables \${${credentials.domain}_*} seront résolues au runtime`);
   
   return yamlFile;
 }
@@ -207,19 +225,30 @@ async function main() {
   console.log('=====================================\n');
   
   // Demander l'URL de connexion
-  const loginUrl = await ask('📝 URL de connexion (ex: https://linkedin.com/login): ');
+  let loginUrl = await ask('📝 URL de connexion (ex: https://linkedin.com/login): ');
   
   if (!loginUrl) {
     console.log('❌ URL requise');
     process.exit(1);
   }
   
-  // Demander le nom du domaine (optionnel, sera auto-détecté)
-  const domainInput = await ask('📁 Nom du domaine (appuyez sur Entrée pour auto-détecter): ');
+  // Ajouter https:// si manquant
+  if (!loginUrl.startsWith('http')) {
+    loginUrl = 'https://' + loginUrl;
+  }
   
-  const domain = domainInput 
+  // Demander le nom du domaine (optionnel, sera auto-détecté)
+  const domainInput = await ask('📁 Nom du domaine (ex: LINKEDIN, appuyez sur Entrée pour auto-détecter): ');
+  
+  let domain = domainInput 
     ? domainInput.toUpperCase().replace(/[^A-Z0-9]/g, '_')
     : extractDomain(loginUrl);
+  
+  // Si le domaine est trop court ou UNKNOWN, redemander
+  if (domain === 'UNKNOWN' || domain.length < 3) {
+    domain = await ask('📁 Nom du domaine (requis, ex: LINKEDIN): ');
+    domain = domain.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+  }
   
   console.log(`\n🌐 Domaine: ${domain}`);
   console.log('');

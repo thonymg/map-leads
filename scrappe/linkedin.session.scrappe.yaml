@@ -1,0 +1,58 @@
+# Scraper LinkedIn avec gestion de session
+# Les variables ${LINKEDIN_*} sont chargées depuis .env
+
+name: linkedin-session-scraper
+url: ${LINKEDIN_URL}
+headless: false
+
+# Configuration de session
+session:
+  enabled: true
+  name: linkedin-session
+  validate: true
+
+scrapers:
+  - name: linkedin-feed
+    url: ${LINKEDIN_URL}
+    steps:
+      # Charger la session
+      - action: session-load
+        params:
+          sessionName: linkedin-session
+          sessionsDir: ./sessions
+      
+      # Navigation vers le fil
+      - action: navigate
+        params:
+          url: ${LINKEDIN_URL}
+          timeout: 30000
+      
+      # Attendre le chargement
+      - action: wait
+        params:
+          selector: "div.feed-update"
+          timeout: 10000
+      
+      # Extraire les posts
+      - action: extract
+        params:
+          selector: "div.feed-update"
+          fields:
+            - name: author
+              selector: "span.update-actor__name"
+            - name: content
+              selector: "div.update-content"
+            - name: time
+              selector: "span.update-context__time"
+      
+      # Pagination (5 pages max)
+      - action: paginate
+        params:
+          selector: "button.loading-button"
+          max_pages: 5
+          itemSelector: "div.feed-update"
+          fields:
+            - name: author
+              selector: "span.update-actor__name"
+            - name: content
+              selector: "div.update-content"

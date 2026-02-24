@@ -1,7 +1,7 @@
 /**
  * MapLeads — Script de Lancement de Scraping
  * Permet de lancer des scrapings sur plusieurs sites via des fichiers .scrappe.yaml
- *
+ * 
  * Usage:
  *   node --experimental-strip-types scrape.ts       # Lance tous les scrapers
  *   node --experimental-strip-types scrape.ts --list
@@ -10,10 +10,14 @@
  */
 
 import { readdir, stat } from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join, basename } from 'path';
 import { loadConfig, applyDefaults, ConfigValidationError, ConfigLoadError } from './src/config.ts';
 import { orchestrate } from './src/orchestrator.ts';
+import { loadEnv, interpolateEnvVars } from './src/config-env.ts';
+
+// Charger les variables d'environnement
+loadEnv();
 
 /**
  * Dossier contenant les configurations de scraping
@@ -110,7 +114,7 @@ async function listConfigFiles(): Promise<string[]> {
 }
 
 /**
- * Charge une configuration depuis le dossier scrappe
+ * Charge une configuration depuis le dossier scrappe avec interpolation des variables d'environnement
  */
 async function loadScrappeConfig(filename: string) {
   const filePath = join(SCRAPPE_DIR, filename);
@@ -119,8 +123,21 @@ async function loadScrappeConfig(filename: string) {
     throw new Error(`Fichier de configuration introuvable: ${filePath}`);
   }
 
-  const rawConfig = await loadConfig(filePath);
-  return applyDefaults(rawConfig);
+  // Lire le contenu du fichier
+  const content = readFileSync(filePath, 'utf-8');
+  
+  // Interpoler les variables d'environnement
+  const interpolatedContent = interpolateEnvVars(content);
+  
+  // Parser le YAML interpolé
+  const { parse } = await import('yaml');
+  const rawConfig = parse(interpolatedContent) as Record<string, unknown>;
+  
+  // Valider et appliquer les défauts
+  const { validateConfig } = await import('./src/config.ts');
+  validateConfig(rawConfig);
+  
+  return applyDefaults(rawConfig as any);
 }
 
 /**
