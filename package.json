@@ -26,8 +26,8 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "p-limit": "^6.2.0",
     "playwright": "^1.58.2",
-    "yaml": "^2.7.0",
-    "p-limit": "^6.2.0"
+    "yaml": "^2.7.0"
   }
 }
