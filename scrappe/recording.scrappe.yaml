@@ -1,5 +1,5 @@
 # Scraper Configuration — Généré automatiquement par MapLeads
-# Date: 2026-02-24T15:27:32.945Z
+# Date: 2026-02-24T17:18:20.209Z
 #
 # Ce fichier a été généré depuis un enregistrement Playwright UI Mode.
 # Vous pouvez le modifier manuellement pour affiner le scraping.
@@ -47,6 +47,6 @@ scrapers:
         options:
           optional: true
 metadata:
-  recordedAt: 2026-02-24T15:27:32.943Z
+  recordedAt: 2026-02-24T17:18:20.209Z
   playwrightVersion: 1.58.2
   optimizerVersion: 1.0.0

@@ -3,7 +3,7 @@
  * Connexion automatique à un site avec authentification
  */
 
-import { Page } from 'playwright';
+import type { Page } from 'playwright';
 import type { ActionResult } from '../types';
 
 /**
@@ -141,7 +141,7 @@ export async function sessionLoad(
   const { sessionName, sessionsDir = './sessions' } = params;
 
   try {
-    const { SessionManager } = await import('./session');
+    const { SessionManager } = await import('./session.js');
     const manager = new SessionManager(sessionsDir);
 
     const loaded = await manager.loadSession(page.context(), sessionName);
@@ -184,7 +184,7 @@ export async function sessionSave(
   const { sessionName, sessionsDir = './sessions' } = params;
 
   try {
-    const { SessionManager } = await import('./session');
+    const { SessionManager } = await import('./session.js');
     const manager = new SessionManager(sessionsDir);
 
     await manager.saveSession(page.context(), sessionName);
@@ -213,7 +213,7 @@ export async function sessionCheck(
   const { sessionName, sessionsDir = './sessions' } = params;
 
   try {
-    const { SessionManager } = await import('./session');
+    const { SessionManager } = await import('./session.ts');
     const manager = new SessionManager(sessionsDir);
 
     const isValid = manager.hasValidSession(sessionName);

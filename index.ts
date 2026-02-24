@@ -7,8 +7,8 @@
 
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { loadConfig, applyDefaults, ConfigValidationError, ConfigLoadError } from './src/config';
-import { orchestrate } from './src/orchestrator';
+import { loadConfig, applyDefaults, ConfigValidationError, ConfigLoadError } from './src/config.ts';
+import { orchestrate } from './src/orchestrator.ts';
 
 /**
  * Obtient le chemin absolu vers le fichier de configuration

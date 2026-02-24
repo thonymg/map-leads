@@ -54,14 +54,14 @@ export function hasCredentials(domain: string): boolean {
  */
 export function listConfiguredDomains(): string[] {
   const domains = new Set<string>();
-  
+
   for (const key of Object.keys(process.env)) {
     const match = key.match(/^([A-Z0-9_]+)_(EMAIL|PASS|URL)$/);
-    if (match) {
+    if (match && match[1]) {
       domains.add(match[1]);
     }
   }
-  
+
   return Array.from(domains);
 }
 

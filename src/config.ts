@@ -14,7 +14,7 @@ import type { ScraperConfig, ScraperDefinition, StepDefinition, ActionType, Extr
 export class ConfigValidationError extends Error {
   public readonly path: string;
   public readonly expected?: string;
-  
+
   constructor(
     message: string,
     path: string,
@@ -25,6 +25,10 @@ export class ConfigValidationError extends Error {
     this.path = path;
     this.expected = expected;
   }
+
+  override toString(): string {
+    return `${this.name}: ${this.message} (${this.path})`;
+  }
 }
 
 /**
@@ -32,11 +36,15 @@ export class ConfigValidationError extends Error {
  */
 export class ConfigLoadError extends Error {
   public readonly cause?: Error;
-  
+
   constructor(message: string, cause?: Error) {
     super(message);
     this.name = 'ConfigLoadError';
     this.cause = cause;
+  }
+
+  override toString(): string {
+    return `${this.name}: ${this.message}`;
   }
 }
 

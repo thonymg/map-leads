@@ -19,19 +19,16 @@ export default defineConfig({
   use: {
     // Mode headless pour l'exécution normale
     headless: true,
-    
+
     // Viewport par défaut
     viewport: { width: 1920, height: 1080 },
-    
-    // Attendre que le réseau soit idle
-    waitUntil: 'networkidle',
-    
+
     // Ignorer les erreurs HTTPS
     ignoreHTTPSErrors: true,
-    
+
     // Capture d'écran en cas d'échec
     screenshot: 'only-on-failure',
-    
+
     // Vidéo en cas d'échec
     video: 'retain-on-failure',
   },

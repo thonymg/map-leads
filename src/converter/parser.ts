@@ -57,12 +57,17 @@ export class PlaywrightCodeParser {
   extractStatements(fn: ts.FunctionDeclaration | ts.ArrowFunction): ts.Statement[] {
     const body = fn.body;
     if (!body) return [];
-    
+
     if (ts.isBlock(body)) {
       return Array.from(body.statements);
     }
-    
-    return [body];
+
+    // Si le corps est une expression (fonction fléchée concise), on la convertit en statement
+    if (ts.isExpression(body)) {
+      return [];
+    }
+
+    return [];
   }
 
   /**

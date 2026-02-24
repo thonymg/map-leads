@@ -128,15 +128,15 @@ async function loadScrappeConfig(filename: string) {
   
   // Interpoler les variables d'environnement
   const interpolatedContent = interpolateEnvVars(content);
-  
+
   // Parser le YAML interpolé
   const { parse } = await import('yaml');
   const rawConfig = parse(interpolatedContent) as Record<string, unknown>;
-  
+
   // Valider et appliquer les défauts
   const { validateConfig } = await import('./src/config.ts');
-  validateConfig(rawConfig);
-  
+  validateConfig(rawConfig as Record<string, unknown>);
+
   return applyDefaults(rawConfig as any);
 }
 
@@ -205,8 +205,9 @@ async function main(): Promise<void> {
   // Lancer par domaine
   if (options.domain) {
     const configs = await listConfigFiles();
+    const domainLower = options.domain.toLowerCase();
     const domainConfigs = configs.filter(config =>
-      config.toLowerCase().includes(options.domain!.toLowerCase())
+      config.toLowerCase().includes(domainLower)
     );
 
     if (domainConfigs.length === 0) {

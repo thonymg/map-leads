@@ -3,8 +3,8 @@
  * Gère les sessions et cookies pour les sites nécessitant une authentification
  */
 
-import { BrowserContext } from 'playwright';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import type { BrowserContext } from 'playwright';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 /**
@@ -82,10 +82,18 @@ export class SessionManager {
       // Récupérer le storage state (localStorage)
       const storageState = await context.storageState();
 
+      // Convertir les origins vers notre type
+      const origins: OriginState[] = storageState.origins.map(origin => ({
+        origin: origin.origin,
+        localStorage: Object.fromEntries(
+          (origin.localStorage || []).map(item => [item.name, item.value])
+        ),
+      }));
+
       // Créer l'état de session
       const state: SessionState = {
         cookies,
-        origins: storageState.origins as OriginState[],
+        origins,
         savedAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + this.maxAge * 1000).toISOString(),
       };
@@ -189,7 +197,7 @@ export class SessionManager {
     const filePath = join(this.sessionsDir, `${sessionName}.json`);
 
     if (existsSync(filePath)) {
-      require('fs').unlinkSync(filePath);
+      unlinkSync(filePath);
       console.log(`🗑️  Session supprimée: ${sessionName}`);
       return true;
     }
@@ -205,10 +213,17 @@ export class SessionManager {
       return [];
     }
 
-    const files = require('fs').readdirSync(this.sessionsDir);
+    const files = readdirSync(this.sessionsDir);
     return files
-      .filter(f => f.endsWith('.json'))
-      .map(f => f.replace('.json', ''));
+      .filter((f: string) => f.endsWith('.json'))
+      .map((f: string) => f.replace('.json', ''));
+  }
+
+  /**
+   * Liste les fichiers de session
+   */
+  listFiles(): string[] {
+    return this.listSessions();
   }
 
   /**

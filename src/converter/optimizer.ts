@@ -1,7 +1,7 @@
 /**
  * Selector Optimizer
  * Optimise les sélecteurs CSS en utilisant les rôles ARIA et les sélecteurs sémantiques
- * 
+ *
  * Stratégies d'optimisation (par ordre de priorité):
  * 1. Rôles ARIA (getByRole) - Le plus robuste
  * 2. Labels ARIA (getByLabel) - Très robuste
@@ -10,7 +10,7 @@
  * 5. CSS simplifié - Moins robuste
  */
 
-import type { OptimizedSelector, RoleOptions } from './types';
+import type { ExtractField, OptimizedSelector, RoleOptions } from './types';
 
 /**
  * Mapping des rôles ARIA vers les sélecteurs CSS équivalents
