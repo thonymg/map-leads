@@ -52,7 +52,7 @@ export interface ViewportSize {
 /**
  * Type d'action disponible
  */
-export type ActionType = 'navigate' | 'wait' | 'click' | 'fill' | 'extract' | 'paginate';
+export type ActionType = 'navigate' | 'wait' | 'click' | 'fill' | 'extract' | 'paginate' | 'session-load' | 'session-save';
 
 /**
  * Définition d'une étape dans un scraper
@@ -145,6 +145,26 @@ export interface PaginateParams extends BaseActionParams {
 }
 
 /**
+ * Paramètres pour l'action session-load
+ */
+export interface SessionLoadParams extends BaseActionParams {
+  /** Nom de la session */
+  sessionName: string;
+  /** Dossier des sessions */
+  sessionsDir?: string;
+}
+
+/**
+ * Paramètres pour l'action session-save
+ */
+export interface SessionSaveParams extends BaseActionParams {
+  /** Nom de la session */
+  sessionName: string;
+  /** Dossier des sessions */
+  sessionsDir?: string;
+}
+
+/**
  * Union de tous les types de paramètres d'actions
  */
 export type ActionParams =
@@ -153,7 +173,9 @@ export type ActionParams =
   | ClickParams
   | FillParams
   | ExtractParams
-  | PaginateParams;
+  | PaginateParams
+  | SessionLoadParams
+  | SessionSaveParams;
 
 // ============================================================================
 // Résultats

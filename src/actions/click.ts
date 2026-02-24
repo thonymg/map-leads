@@ -21,9 +21,26 @@ export async function click(params: ClickParams, page: Page): Promise<ActionResu
   const { selector, timeout = DEFAULT_TIMEOUT } = params;
 
   try {
+    // Nettoyer le selector s'il contient des espaces non valides pour CSS
+    let cleanSelector = selector;
+    
+    // Si le selector ressemble à [role=...] avec des espaces, utiliser text= ou getByRole
+    const roleMatch = selector.match(/^\[role=(\w+)\s+(.*)\]$/);
+    if (roleMatch) {
+      const [, role, text] = roleMatch;
+      // Utiliser getByRole avec le texte
+      const locator = page.getByRole(role as any, { name: new RegExp(text, 'i') });
+      await locator.click({ timeout, force: true });
+      
+      return {
+        success: true,
+        message: `Clic réussi sur "${selector}"`,
+      };
+    }
+    
     // Vérifier si l'élément existe
     const element = await page.$(selector);
-    
+
     if (!element) {
       // Tolérance: élément absent n'est pas une erreur (CA-11)
       return {
@@ -34,7 +51,7 @@ export async function click(params: ClickParams, page: Page): Promise<ActionResu
 
     // Tenter le clic
     await element.click({ timeout });
-    
+
     return {
       success: true,
       message: `Clic réussi sur "${selector}"`,

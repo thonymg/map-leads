@@ -51,7 +51,7 @@ export class ConfigLoadError extends Error {
 /**
  * Actions valides pour validation
  */
-const VALID_ACTIONS: ActionType[] = ['navigate', 'wait', 'click', 'fill', 'extract', 'paginate'];
+const VALID_ACTIONS: ActionType[] = ['navigate', 'wait', 'click', 'fill', 'extract', 'paginate', 'session-load', 'session-save'];
 
 /**
  * Charge et parse un fichier YAML
@@ -284,6 +284,34 @@ function validatePaginateParams(params: Record<string, unknown>, stepIndex: numb
 }
 
 /**
+ * Valide les paramètres d'une action session-load
+ */
+function validateSessionLoadParams(params: Record<string, unknown>, stepIndex: number, scraperName: string): void {
+  const path = `scrapers[${scraperName}].steps[${stepIndex}].params`;
+
+  validateRequiredField<string>(getStringProp(params, 'sessionName'), 'sessionName', path);
+
+  const sessionsDir = getStringProp(params, 'sessionsDir');
+  if (sessionsDir !== undefined && typeof sessionsDir !== 'string') {
+    throw new ConfigValidationError('sessionsDir doit être une string', path);
+  }
+}
+
+/**
+ * Valide les paramètres d'une action session-save
+ */
+function validateSessionSaveParams(params: Record<string, unknown>, stepIndex: number, scraperName: string): void {
+  const path = `scrapers[${scraperName}].steps[${stepIndex}].params`;
+
+  validateRequiredField<string>(getStringProp(params, 'sessionName'), 'sessionName', path);
+
+  const sessionsDir = getStringProp(params, 'sessionsDir');
+  if (sessionsDir !== undefined && typeof sessionsDir !== 'string') {
+    throw new ConfigValidationError('sessionsDir doit être une string', path);
+  }
+}
+
+/**
  * Valide une étape (step)
  */
 function validateStep(step: unknown, stepIndex: number, scraperName: string): void {
@@ -332,6 +360,12 @@ function validateStep(step: unknown, stepIndex: number, scraperName: string): vo
       break;
     case 'paginate':
       validatePaginateParams(params, stepIndex, scraperName);
+      break;
+    case 'session-load':
+      validateSessionLoadParams(params, stepIndex, scraperName);
+      break;
+    case 'session-save':
+      validateSessionSaveParams(params, stepIndex, scraperName);
       break;
   }
 }

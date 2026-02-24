@@ -18,6 +18,7 @@ import { click } from './actions/click.ts';
 import { fill } from './actions/fill.ts';
 import { extract } from './actions/extract.ts';
 import { paginate } from './actions/paginate.ts';
+import { sessionLoad, sessionSave } from './actions/login.ts';
 
 /**
  * Crée un résultat de scraper vide initialisé
@@ -68,6 +69,12 @@ async function executeStep(
         break;
       case 'paginate':
         result = await paginate(params as unknown as import('./types').PaginateParams, page);
+        break;
+      case 'session-load':
+        result = await sessionLoad(params as unknown as import('./types').SessionLoadParams, page);
+        break;
+      case 'session-save':
+        result = await sessionSave(params as unknown as import('./types').SessionSaveParams, page);
         break;
       default:
         throw new Error(`Action inconnue: ${action}`);
