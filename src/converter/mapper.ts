@@ -26,29 +26,131 @@ export class ActionMapper {
    */
   mapStatements(statements: ts.Statement[]): ConvertedStep[] {
     const steps: ConvertedStep[] = [];
-    let pendingLocator: string | null = null;
 
     for (const stmt of statements) {
-      const step = this.mapStatement(stmt, pendingLocator);
-      
-      if (step) {
-        // Si on a un locator en attente, l'ajouter au selector
-        if (pendingLocator && step.params.selector) {
-          step.params.selector = `${pendingLocator} ${step.params.selector}`;
-          pendingLocator = null;
+      // Navigation: page.goto()
+      if (this.parser.isPageGotoCall(stmt)) {
+        const url = this.parser.extractUrlFromGoto(stmt);
+        if (url) {
+          steps.push({
+            action: 'navigate',
+            params: { url },
+          });
         }
-        
-        steps.push(step);
+        continue;
       }
 
-      // Mémoriser les locators définis dans des variables
-      const varStep = this.extractVariableLocator(stmt);
-      if (varStep) {
-        pendingLocator = varStep;
+      // Clic: page.getByRole().click() ou locator().click()
+      if (this.isClickStatement(stmt)) {
+        const selector = this.extractSelectorFromClickStatement(stmt);
+        if (selector) {
+          steps.push({
+            action: 'click',
+            params: { selector },
+            options: { optional: true },
+          });
+        }
+        continue;
+      }
+
+      // Attente implicite avec waitFor
+      if (this.isWaitStatement(stmt)) {
+        const step = this.mapWait(stmt);
+        if (step) steps.push(step);
+        continue;
+      }
+
+      // Extraction: boucle for
+      if (this.parser.isForLoop(stmt)) {
+        const step = this.mapExtractOrPaginate(stmt);
+        if (step) steps.push(step);
+        continue;
+      }
+
+      // Condition: if
+      if (this.parser.isIfStatement(stmt)) {
+        const step = this.mapConditional(stmt);
+        if (step) steps.push(step);
+        continue;
       }
     }
 
-    return steps;
+    // Si aucune étape trouvée, essayer une approche plus simple
+    if (steps.length === 0) {
+      console.log('  → Utilisation du mode simple...');
+      return this.mapStatementsSimple(statements);
+    }
+
+    console.log(`✅ ${steps.length} actions mappées`);
+    return this.optimizeSteps(steps);
+  }
+
+  /**
+   * Approche simplifiée pour mapper les statements
+   */
+  private mapStatementsSimple(statements: ts.Statement[]): ConvertedStep[] {
+    const steps: ConvertedStep[] = [];
+
+    for (const stmt of statements) {
+      // page.goto()
+      if (this.parser.isPageGotoCall(stmt)) {
+        const url = this.parser.extractUrlFromGoto(stmt);
+        if (url) {
+          steps.push({
+            action: 'navigate',
+            params: { url },
+          });
+        }
+        continue;
+      }
+
+      // page.getBy*().click()
+      if (this.isClickStatement(stmt)) {
+        const selector = this.extractSelectorFromClickStatement(stmt);
+        if (selector) {
+          steps.push({
+            action: 'click',
+            params: { selector },
+            options: { optional: true },
+          });
+        }
+      }
+    }
+
+    return this.optimizeSteps(steps);
+  }
+
+  /**
+   * Extrait le sélecteur depuis un statement click
+   */
+  private extractSelectorFromClickStatement(stmt: ts.Statement): string | null {
+    if (!ts.isExpressionStatement(stmt)) return null;
+    if (!ts.isAwaitExpression(stmt.expression)) return null;
+    
+    const call = stmt.expression.expression;
+    if (!ts.isCallExpression(call)) return null;
+    
+    const expr = call.expression;
+    if (!ts.isPropertyAccessExpression(expr)) return null;
+    if (expr.name.text !== 'click') return null;
+    
+    // Remonter pour trouver le getByRole
+    let current: ts.Node = expr.expression;
+    
+    while (current) {
+      if (ts.isCallExpression(current)) {
+        const selector = this.parser.extractSelectorFromLocator(current);
+        if (selector) return selector;
+      }
+      
+      if (ts.isPropertyAccessExpression(current)) {
+        current = current.expression;
+      } else {
+        break;
+      }
+    }
+    
+    return null;
   }
 
   /**
@@ -348,16 +450,16 @@ export class ActionMapper {
    * Vérifie si un statement est un clic
    */
   private isClickStatement(stmt: ts.Statement): boolean {
-    if (ts.isExpressionStatement(stmt)) {
-      const call = stmt.expression;
-      if (ts.isCallExpression(call)) {
-        const expr = call.expression;
-        if (ts.isPropertyAccessExpression(expr)) {
-          return expr.name.text === 'click';
-        }
-      }
-    }
-    return false;
+    if (!ts.isExpressionStatement(stmt)) return false;
+    if (!ts.isAwaitExpression(stmt.expression)) return false;
+    
+    const call = stmt.expression.expression;
+    if (!ts.isCallExpression(call)) return false;
+    
+    const expr = call.expression;
+    if (!ts.isPropertyAccessExpression(expr)) return false;
+    
+    return expr.name.text === 'click';
   }
 
   /**
@@ -380,10 +482,20 @@ export class ActionMapper {
    * Applique l'optimisation aux étapes
    */
   optimizeSteps(steps: ConvertedStep[]): ConvertedStep[] {
-    return steps.map(step => ({
-      ...step,
-      params: this.optimizer.optimizeParams(step.params),
-    }));
+    if (!steps || steps.length === 0) {
+      return [];
+    }
+    
+    return steps.map(step => {
+      if (!step || !step.params) {
+        return step;
+      }
+      const optimizer = new SelectorOptimizer();
+      return {
+        ...step,
+        params: optimizer.optimizeParams(step.params),
+      };
+    });
   }
 }
 

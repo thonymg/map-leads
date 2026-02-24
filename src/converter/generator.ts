@@ -40,14 +40,20 @@ export class YamlGenerator {
    */
   private buildYamlObject(config: ConvertedConfig): Record<string, unknown> {
     return {
-      // Configuration du scraper
+      // Configuration globale
       name: config.name,
       url: config.url,
       headless: config.headless ?? true,
       viewport: config.viewport ?? { width: 1920, height: 1080 },
       
-      // Étapes
-      steps: config.steps.map(step => this.buildStepObject(step)),
+      // Liste des scrapers (requis par le validateur)
+      scrapers: [
+        {
+          name: config.name,
+          url: config.url,
+          steps: config.steps.map(step => this.buildStepObject(step)),
+        },
+      ],
       
       // Métadonnées
       metadata: config.metadata,

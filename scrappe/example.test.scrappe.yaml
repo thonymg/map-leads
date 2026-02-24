@@ -1,0 +1,34 @@
+# Scraper Configuration — Généré automatiquement par MapLeads
+# Date: 2026-02-24T15:25:33.756Z
+#
+# Ce fichier a été généré depuis un enregistrement Playwright UI Mode.
+# Vous pouvez le modifier manuellement pour affiner le scraping.
+name: example.test
+url: https://www.wikipedia.org/
+headless: true
+viewport:
+  width: 1920
+  height: 1080
+steps:
+  - action: navigate
+    params:
+      url: https://www.wikipedia.org/
+  - action: click
+    params:
+      selector: "[role=link Français 2 740 000+ articles]"
+    options:
+      optional: true
+  - action: click
+    params:
+      selector: "[role=link Le Martyre de sainte Catherine]"
+    options:
+      optional: true
+  - action: click
+    params:
+      selector: "[role=link Aperçu de son œuvre]"
+    options:
+      optional: true
+metadata:
+  recordedAt: 2026-02-24T15:25:33.753Z
+  playwrightVersion: 1.58.2
+  optimizerVersion: 1.0.0

@@ -1,6 +1,6 @@
-# 🎬 Enregistrements UI Mode
+# 🎬 Enregistrements avec Playwright Codegen
 
-**Enregistrer des parcours de navigation avec Playwright UI**
+**Génération automatique de code par enregistrement de navigation**
 
 ---
 
@@ -14,38 +14,29 @@ npm run record
 
 ## 📋 Mode d'Emploi
 
-### 1. Lancer le mode UI
+### 1. Lancer Codegen
 
 ```bash
 npm run record
 ```
 
-Une fenêtre Playwright s'ouvre.
+Une fenêtre s'ouvre avec :
+- **Navigateur** à droite
+- **Code généré** à gauche
 
-### 2. Activer l'enregistrement
+### 2. Naviguer et Enregistrer
 
-Dans la fenêtre Playwright :
+1. **Entrez l'URL** dans la barre en haut
+2. **Naviguez** sur le site
+3. **Effectuez vos actions** (clics, remplissage, etc.)
+4. **Le code est généré** en temps réel à gauche
 
-1. **Cliquez sur "Record"** (bouton en haut à droite, icône ●)
-2. **Choisissez le projet** (chromium)
-3. **Une nouvelle page s'ouvre** - Naviguez et effectuez vos actions
+### 3. Copier le Code
 
-### 3. Effectuer vos actions
+1. **Cliquez sur "Copy"** en haut du panneau de code
+2. **Collez dans** `recordings/mon-parcours.ts`
 
-- Naviguez vers le site
-- Cliquez sur les éléments
-- Remplissez les formulaires
-- Scrollez pour charger le contenu
-
-Toutes vos actions sont enregistrées en temps réel dans le panneau de gauche.
-
-### 4. Arrêter l'enregistrement
-
-1. **Cliquez à nouveau sur "Record"** (●) pour arrêter
-2. **Le code est affiché** dans le panneau de gauche
-3. **Copiez le code** dans un fichier `recordings/mon-parcours.ts`
-
-### 5. Convertir
+### 4. Convertir
 
 ```bash
 npm run convert -- -i recordings/mon-parcours.ts -o scrappe/mon-scraper.scrappe.yaml
@@ -53,9 +44,23 @@ npm run convert -- -i recordings/mon-parcours.ts -o scrappe/mon-scraper.scrappe.
 
 ---
 
-## 📁 Fichier d'Exemple
+## 🎯 Options
 
-`recordings/example.test.ts` - Fichier vide pour initialiser le mode UI.
+```bash
+# Basique (sans sauvegarde auto)
+npm run record
+
+# Avec URL de départ
+npx playwright codegen https://example.com
+
+# Avec viewport personnalisé
+npx playwright codegen --viewport-size 1920,1080
+
+# Enregistrer directement dans un fichier
+npm run record:file
+# ou
+npx playwright codegen -o recordings/mon-parcours.ts
+```
 
 ---
 
@@ -111,7 +116,8 @@ steps:
 
 ## 📖 Documentation
 
-[src/converter/README.md](../src/converter/README.md) — Détails de la conversion
+- [Playwright Codegen](https://playwright.dev/docs/codegen)
+- [src/converter/README.md](../src/converter/README.md)
 
 ---
 

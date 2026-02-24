@@ -122,10 +122,10 @@ export async function convertDirectory(options: {
   outputDir: string;
   optimizeSelectors?: boolean;
 }): Promise<void> {
-  const { readdirSync } = require('fs');
-  const { join } = require('path');
+  const { readdirSync } = await import('fs');
+  const { join } = await import('path');
 
-  const files = readdirSync(options.inputDir).filter((f: string) => 
+  const files = readdirSync(options.inputDir).filter((f: string) =>
     f.endsWith('.ts') || f.endsWith('.js')
   );
 

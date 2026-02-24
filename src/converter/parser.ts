@@ -68,26 +68,56 @@ export class PlaywrightCodeParser {
   /**
    * Vérifie si un node est un appel à page.goto()
    */
-  isPageGotoCall(node: ts.Node): node is ts.ExpressionStatement {
-    if (!ts.isExpressionStatement(node)) return false;
-    if (!ts.isCallExpression(node.expression)) return false;
+  isPageGotoCall(node: ts.Node): boolean {
+    // await page.goto()
+    if (ts.isExpressionStatement(node) && ts.isAwaitExpression(node.expression)) {
+      const call = node.expression.expression;
+      if (ts.isCallExpression(call)) {
+        const expr = call.expression;
+        if (ts.isPropertyAccessExpression(expr)) {
+          return expr.name.text === 'goto';
+        }
+      }
+    }
     
-    const expr = node.expression.expression;
-    if (!ts.isPropertyAccessExpression(expr)) return false;
+    // page.goto() sans await
+    if (ts.isExpressionStatement(node)) {
+      const call = node.expression;
+      if (ts.isCallExpression(call)) {
+        const expr = call.expression;
+        if (ts.isPropertyAccessExpression(expr)) {
+          return expr.name.text === 'goto';
+        }
+      }
+    }
     
-    return expr.name.text === 'goto';
+    return false;
   }
 
   /**
    * Extrait l'URL depuis page.goto()
    */
-  extractUrlFromGoto(node: ts.ExpressionStatement): string | null {
-    const call = node.expression as ts.CallExpression;
-    if (call.arguments.length === 0) return null;
+  extractUrlFromGoto(node: ts.Node): string | null {
+    // await page.goto()
+    if (ts.isExpressionStatement(node) && ts.isAwaitExpression(node.expression)) {
+      const call = node.expression.expression;
+      if (ts.isCallExpression(call) && call.arguments.length > 0) {
+        const firstArg = call.arguments[0];
+        if (ts.isStringLiteral(firstArg)) {
+          return firstArg.text;
+        }
+      }
+    }
     
-    const firstArg = call.arguments[0];
-    if (ts.isStringLiteral(firstArg)) {
-      return firstArg.text;
+    // page.goto() sans await
+    if (ts.isExpressionStatement(node) && !ts.isAwaitExpression(node.expression)) {
+      const call = node.expression;
+      if (ts.isCallExpression(call) && call.arguments.length > 0) {
+        const firstArg = call.arguments[0];
+        if (ts.isStringLiteral(firstArg)) {
+          return firstArg.text;
+        }
+      }
     }
     
     return null;
@@ -114,33 +144,61 @@ export class PlaywrightCodeParser {
   }
 
   /**
-   * Vérifie si un node est un appel à locator()
+   * Vérifie si un node est un appel à locator() ou getBy*()
    */
   isLocatorCall(node: ts.Node): boolean {
     if (ts.isCallExpression(node)) {
       const expr = node.expression;
       if (ts.isPropertyAccessExpression(expr)) {
-        return expr.name.text === 'locator';
+        return expr.name.text === 'locator' || 
+               expr.name.text.startsWith('getBy');
       }
     }
     return false;
   }
 
   /**
-   * Extrait le sélecteur depuis locator('selector')
+   * Extrait le sélecteur depuis locator('selector') ou getByRole('button', { name: 'Submit' })
    */
   extractSelectorFromLocator(node: ts.Node): string | null {
     if (!ts.isCallExpression(node)) return null;
     
     const expr = node.expression;
     if (!ts.isPropertyAccessExpression(expr)) return null;
-    if (expr.name.text !== 'locator') return null;
     
-    if (node.arguments.length === 0) return null;
+    const methodName = expr.name.text;
     
-    const firstArg = node.arguments[0];
-    if (ts.isStringLiteral(firstArg)) {
-      return firstArg.text;
+    // locator('.selector')
+    if (methodName === 'locator' && node.arguments.length > 0) {
+      const firstArg = node.arguments[0];
+      if (ts.isStringLiteral(firstArg)) {
+        return firstArg.text;
+      }
+    }
+    
+    // getByRole('button', { name: 'Submit' })
+    if (methodName.startsWith('getBy')) {
+      const args: string[] = [];
+      
+      // Premier argument : rôle/type
+      if (node.arguments.length > 0 && ts.isStringLiteral(node.arguments[0])) {
+        args.push(node.arguments[0].text);
+      }
+      
+      // Deuxième argument : options { name: '...' }
+      if (node.arguments.length > 1 && ts.isObjectLiteralExpression(node.arguments[1])) {
+        for (const prop of node.arguments[1].properties) {
+          if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name) && prop.name.text === 'name') {
+            if (ts.isStringLiteral(prop.initializer)) {
+              args.push(prop.initializer.text);
+            }
+          }
+        }
+      }
+      
+      if (args.length > 0) {
+        return `[role=${args.join(' ')}]`;
+      }
     }
     
     return null;
