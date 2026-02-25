@@ -1,6 +1,8 @@
-# 🔄 Action Loop - Itération sur des Éléments
+# 🔄 Action Loop — Itération sur des Éléments
 
 **Exécuter une séquence d'actions en boucle pour chaque élément d'une liste**
+
+> 📚 Cette documentation fait partie de la [documentation complète MapLeads](./INDEX.md).
 
 ---
 
@@ -11,6 +13,10 @@ L'action `loop` permet d'itérer sur une liste d'éléments et d'exécuter un so
 - Cliquer sur chaque profil dans une liste et extraire des données
 - Naviguer dans des pages de détail multiples
 - Scraper des résultats de recherche un par un
+
+**Voir aussi :**
+- [Guide d'extraction des données](./EXTRACTION_DONNEES.md)
+- [Référence complète YAML](./SCRAPPE_YAML_CONFIG.md)
 
 ---
 
@@ -587,11 +593,11 @@ steps:
 
 ## 📖 Voir Aussi
 
-- [EXTRACTION_DONNEES.md](./EXTRACTION_DONNEES.md) - Guide d'extraction
-- [PAGINATION.md](./PAGINATION.md) - Navigation multi-pages
-- [SESSION.md](./SESSION.md) - Gestion des sessions
+- [INDEX.md](./INDEX.md) — Documentation principale
+- [EXTRACTION_DONNEES.md](./EXTRACTION_DONNEES.md) — Guide d'extraction
+- [SCRAPPE_YAML_CONFIG.md](./SCRAPPE_YAML_CONFIG.md) — Référence YAML complète
 
 ---
 
-**Dernière mise à jour :** 24 février 2026  
+**Dernière mise à jour :** 25 février 2026  
 **Version :** 1.0.0

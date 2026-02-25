@@ -8,7 +8,7 @@
     "scrape": "node --experimental-strip-types scrape.ts",
     "auth": "node --experimental-strip-types scripts/auth-ui.ts",
     "record": "npx playwright codegen",
-    "record:file": "npx playwright codegen -o recordings/recording.ts",
+    "record:file": "node --experimental-strip-types scripts/record.ts",
     "convert": "node --experimental-strip-types src/converter/index.ts",
     "convert:all": "node --experimental-strip-types -e \"import { convertDirectory } from './src/converter/index.ts'; convertDirectory({ inputDir: './recordings', outputDir: './scrappe', optimizeSelectors: true });\"",
     "test": "bun test",

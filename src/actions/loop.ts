@@ -18,6 +18,26 @@ const DEFAULT_TIMEOUT = 10000;
 const DEFAULT_DELAY = 1000;
 
 /**
+ * Substitue les variables dans un objet ou une chaîne
+ */
+function substituteVars(obj: any, vars: Record<string, unknown>): any {
+  if (typeof obj === 'string') {
+    return obj.replace(/\${(\w+)}/g, (_, key) => {
+      return vars[key] !== undefined ? String(vars[key]) : `\${${key}}`;
+    });
+  } else if (Array.isArray(obj)) {
+    return obj.map(item => substituteVars(item, vars));
+  } else if (typeof obj === 'object' && obj !== null) {
+    const newObj: any = {};
+    for (const key in obj) {
+      newObj[key] = substituteVars(obj[key], vars);
+    }
+    return newObj;
+  }
+  return obj;
+}
+
+/**
  * Exécute une action individuelle (import dynamique pour éviter les cycles)
  */
 async function executeStep(
@@ -26,7 +46,10 @@ async function executeStep(
   index: number,
   contextVars: Record<string, unknown>
 ): Promise<{ success: boolean; data?: unknown; message?: string }> {
-  const { action, params } = step;
+  const { action } = step;
+  
+  // Substituer les variables dans les paramètres
+  const params = substituteVars(step.params, contextVars);
 
   try {
     let result: ActionResult;

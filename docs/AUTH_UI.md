@@ -2,6 +2,8 @@
 
 **Authentification fluide avec export automatique de session**
 
+> 📚 Cette documentation fait partie de la [documentation complète MapLeads](./INDEX.md).
+
 ---
 
 ## 🚀 Usage
@@ -101,4 +103,13 @@ Modifiez `.env` manuellement.
 
 ---
 
-**Créé le:** 24 février 2026
+## 🔗 Voir Aussi
+
+- [INDEX.md](./INDEX.md) — Documentation principale
+- [ENV.md](./ENV.md) — Variables d'environnement
+- [PIPELINE.md](./PIPELINE.md) — Flux complet
+
+---
+
+**Dernière mise à jour :** 25 février 2026  
+**Version :** 1.0.0

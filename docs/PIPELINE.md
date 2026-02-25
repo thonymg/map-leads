@@ -2,6 +2,8 @@
 
 **Flux complet depuis l'authentification jusqu'au résultat final**
 
+> 📚 Cette documentation fait partie de la [documentation complète MapLeads](./INDEX.md).
+
 ---
 
 ## 📊 Vue d'Ensemble
@@ -219,5 +221,13 @@ cat .env
 
 ---
 
-**Créé le:** 24 février 2026  
-**Version:** 1.0
+## 🔗 Voir Aussi
+
+- [INDEX.md](./INDEX.md) — Documentation principale
+- [ENV.md](./ENV.md) — Variables d'environnement
+- [AUTH_UI.md](./AUTH_UI.md) — Authentification UI
+
+---
+
+**Dernière mise à jour :** 25 février 2026  
+**Version :** 1.0.0

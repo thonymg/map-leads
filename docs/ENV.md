@@ -2,6 +2,8 @@
 
 **Gestion centralisée des credentials et configurations**
 
+> 📚 Cette documentation fait partie de la [documentation complète MapLeads](./INDEX.md).
+
 ---
 
 ## 📁 Fichier `.env`
@@ -103,4 +105,13 @@ if (hasCredentials('LINKEDIN')) {
 
 ---
 
-**Créé le:** 24 février 2026
+## 🔗 Voir Aussi
+
+- [INDEX.md](./INDEX.md) — Documentation principale
+- [AUTH_UI.md](./AUTH_UI.md) — Authentification UI
+- [SCRAPPE_YAML_CONFIG.md](./SCRAPPE_YAML_CONFIG.md) — Référence YAML
+
+---
+
+**Dernière mise à jour :** 25 février 2026  
+**Version :** 1.0.0

@@ -19,30 +19,74 @@ export async function extract(params: ExtractParams, page: Page): Promise<Action
     // Utiliser evaluate pour extraire les données directement dans le contexte du navigateur
     const results = await page.evaluate(
       ({ sel, fieldsList }) => {
-        const elements = document.querySelectorAll(sel);
-        const items: Record<string, unknown>[] = [];
+        const elements = Array.from(document.querySelectorAll(sel));
 
-        for (let i = 0; i < elements.length; i++) {
-          const element = elements[i]!;
-          const item: Record<string, unknown> = {};
+        /**
+         * Fonction récursive terminale pour traiter les champs d'un élément (Profondeur)
+         * @param element - L'élément DOM parent
+         * @param fields - La liste des champs à extraire
+         * @param index - L'index du champ en cours
+         * @param acc - L'accumulateur pour l'objet résultat
+         */
+        const processFields = (
+          element: Element,
+          fields: any[],
+          index: number = 0,
+          acc: Record<string, unknown> = {}
+        ): Record<string, unknown> => {
+          // Condition de sortie : tous les champs traités
+          if (index >= fields.length) {
+            return acc;
+          }
+
+          const field = fields[index];
+          const target = element.querySelector(field.selector);
           
-          for (let j = 0; j < fieldsList.length; j++) {
-            const field = fieldsList[j]!;
-            const targetElement = element.querySelector(field.selector);
-            
-            if (!targetElement) {
-              item[field.name] = null;
-            } else if (field.attribute) {
-              item[field.name] = targetElement.getAttribute(field.attribute);
+          let value: string | null = null;
+          if (target) {
+            if (field.attribute) {
+              value = target.getAttribute(field.attribute);
             } else {
-              item[field.name] = targetElement.textContent?.trim() ?? null;
+              // Extraction profonde du texte : textContent récupère tout le texte descendant
+              value = target.textContent?.trim() ?? null;
             }
           }
           
-          items.push(item);
-        }
+          acc[field.name] = value;
 
-        return items;
+          // Appel récursif terminal
+          return processFields(element, fields, index + 1, acc);
+        };
+
+        /**
+         * Fonction récursive terminale pour traiter la liste des éléments (Largeur)
+         * @param elems - La liste des éléments DOM
+         * @param index - L'index de l'élément en cours
+         * @param acc - L'accumulateur pour la liste des résultats
+         */
+        const processElements = (
+          elems: Element[],
+          index: number = 0,
+          acc: Record<string, unknown>[] = []
+        ): Record<string, unknown>[] => {
+          // Condition de sortie : tous les éléments traités
+          if (index >= elems.length) {
+            return acc;
+          }
+
+          const element = elems[index];
+          // Traitement de l'élément courant
+          const item = processFields(element, fieldsList);
+          
+          // Optimisation : on pousse dans l'accumulateur existant (évite la création de nouveaux tableaux)
+          acc.push(item);
+
+          // Appel récursif terminal
+          return processElements(elems, index + 1, acc);
+        };
+
+        // Lancement de la récursion sur les éléments trouvés
+        return processElements(elements);
       },
       { sel: selector, fieldsList: fields }
     );

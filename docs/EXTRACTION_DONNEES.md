@@ -2,11 +2,17 @@
 
 **Comment sélectionner les données à enregistrer avec MapLeads**
 
+> 📚 Cette documentation fait partie de la [documentation complète MapLeads](./INDEX.md).
+
 ---
 
 ## 🎯 Vue d'Ensemble
 
 MapLeads utilise l'action `extract` pour extraire des données structurées depuis des pages web. Vous configurez les champs à extraire dans vos fichiers YAML.
+
+**Voir aussi :**
+- [Action Loop](./ACTION_LOOP.md) — Itération sur des éléments
+- [Référence YAML](./SCRAPPE_YAML_CONFIG.md) — Tous les paramètres
 
 ---
 
@@ -542,11 +548,19 @@ fields:
 
 ## 📖 Ressources Utiles
 
-- [MDN - Selecteurs CSS](https://developer.mozilla.org/fr/docs/Web/CSS/CSS_Selectors)
-- [Playwright - Locators](https://playwright.dev/docs/locators)
-- [CSS Diner](https://flukeout.github.io/) - Jeu pour apprendre les sélecteurs
+- [MDN — Sélecteurs CSS](https://developer.mozilla.org/fr/docs/Web/CSS/CSS_Selectors)
+- [Playwright — Locators](https://playwright.dev/docs/locators)
+- [CSS Diner](https://flukeout.github.io/) — Jeu pour apprendre les sélecteurs
 
 ---
 
-**Dernière mise à jour :** 24 février 2026  
+## 🔗 Voir Aussi
+
+- [INDEX.md](./INDEX.md) — Documentation principale
+- [ACTION_LOOP.md](./ACTION_LOOP.md) — Itération sur des éléments
+- [SCRAPPE_YAML_CONFIG.md](./SCRAPPE_YAML_CONFIG.md) — Référence YAML complète
+
+---
+
+**Dernière mise à jour :** 25 février 2026  
 **Version :** 1.0.0

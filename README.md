@@ -1,6 +1,6 @@
-# 🍁 MapLeads — Scraper Web Configurable
+# 🍁 MapLeads
 
-Outil de scraping web modulaire, piloté par configuration YAML, avec authentification automatique.
+**Scraper Web Configurable** — Outil de scraping web modulaire, piloté par configuration YAML, avec authentification automatique.
 
 ---
 
@@ -13,20 +13,12 @@ bun install
 bunx playwright install chromium
 ```
 
-### Configuration (.env)
+### Configuration
 
 ```bash
 cp .env.example .env
-# Modifier les credentials dans .env
+# Éditer .env avec vos credentials
 ```
-
-### Authentification (Sites avec login)
-
-```bash
-npm run auth
-```
-
-→ Vous connecte et exporte session + credentials automatiquement.
 
 ### Lancer un Scraper
 
@@ -36,155 +28,87 @@ npm run scrape -- --file <fichier>.scrappe.yaml
 
 ---
 
-## 📋 Commandes
+## 📖 Documentation
+
+La documentation complète se trouve dans le dossier [`docs/`](./docs/).
+
+### Guides Principaux
+
+| Document | Description |
+|----------|-------------|
+| [docs/README.md](./docs/README.md) | **Démarrage rapide** et vue d'ensemble |
+| [docs/INDEX.md](./docs/INDEX.md) | **Portail de documentation** avec table des matières |
+| [docs/SCRAPPE_YAML_CONFIG.md](./docs/SCRAPPE_YAML_CONFIG.md) | **Référence complète** des fichiers YAML |
+| [docs/PIPELINE.md](./docs/PIPELINE.md) | Flux complet depuis l'authentification |
+
+### Guides Thématiques
+
+| Document | Description |
+|----------|-------------|
+| [docs/ENV.md](./docs/ENV.md) | Gestion des variables d'environnement |
+| [docs/AUTH_UI.md](./docs/AUTH_UI.md) | Authentification via interface UI |
+| [docs/CONVERTER.md](./docs/CONVERTER.md) | Conversion enregistrements → YAML |
+| [docs/ACTION_LOOP.md](./docs/ACTION_LOOP.md) | Utilisation des boucles (`loop`) |
+| [docs/EXTRACTION_DONNEES.md](./docs/EXTRACTION_DONNEES.md) | Guide d'extraction des données |
+
+---
+
+## 📋 Commandes Principales
 
 | Commande | Description |
 |----------|-------------|
 | `npm run auth` | Authentification avec export session + credentials |
 | `npm run scrape` | Lance tous les scrapers |
 | `npm run scrape -- --file <file>` | Lance un fichier spécifique |
-| `npm run scrape -- --list` | Liste les configurations |
+| `npm run scrape -- --list` | Liste les configurations disponibles |
 | `npm run record` | Mode UI pour enregistrer un parcours |
-| `npm run convert -i <file> -o <file>` | Convertit recording → YAML |
+| `npm run convert -i <in> -o <out>` | Convertit recording → YAML |
 
 ---
 
-## 📁 Structure
+## 📁 Structure du Projet
 
 ```
 mapleads/
-├── src/
-│   ├── actions/         # Actions (navigate, click, extract...)
-│   ├── converter/       # Conversion UI → YAML
-│   ├── config-env.ts    # Gestion des variables d'environnement
-│   ├── session.ts       # Gestion des sessions
-│   └── types.ts         # Types partagés
-├── scrappe/             # Configurations YAML
-├── sessions/            # Sessions (gitignore)
-├── results/             # Résultats JSON
-├── recordings/          # Enregistrements UI
-├── scripts/
-│   └── auth-ui.ts       # Script d'authentification
-└── .env                 # Credentials (gitignore)
+├── docs/                  # 📚 Documentation
+├── src/                   # Code source
+├── scrappe/               # Configurations YAML (*.scrappe.yaml)
+├── sessions/              # Sessions authentifiées (gitignore)
+├── results/               # Résultats JSON des scrapings
+├── recordings/            # Enregistrements Playwright UI
+├── .env                   # Credentials (gitignore)
+└── package.json
 ```
 
 ---
 
-## 🔐 Authentification
+## 🔑 Fonctionnalités
 
-### 1. Créer le fichier .env
-
-```bash
-cp .env.example .env
-```
-
-### 2. Lancer l'authentification
-
-```bash
-npm run auth
-```
-
-### 3. Le script exporte automatiquement :
-
-- `.env` → Credentials (`[DOMAIN]_EMAIL`, `[DOMAIN]_PASS`)
-- `sessions/[domain]_session.json` → Session
-- `scrappe/[domain].auth.scrappe.yaml` → Configuration
-
-### 4. Lancer le scraper
-
-```bash
-npm run scrape -- --file linkedin.auth.scrappe.yaml
-```
+- ✅ **Configuration YAML** — Définissez vos scrapers sans code
+- ✅ **Authentification automatique** — Gestion des sessions et credentials
+- ✅ **Variables d'environnement** — Credentials sécurisés dans `.env`
+- ✅ **Pagination automatique** — Naviguez sur plusieurs pages
+- ✅ **Boucles et itérations** — Traitez des listes d'éléments
+- ✅ **Export JSON structuré** — Résultats prêts à l'emploi
+- ✅ **Mode enregistrement** — Générez des configs via UI Playwright
 
 ---
 
-## 📖 Documentation
+## 🛠️ Technologies
 
-| Fichier | Description |
-|---------|-------------|
-| [PIPELINE.md](./PIPELINE.md) | **Flux complet du pipeline** |
-| [ENV.md](./ENV.md) | Variables d'environnement |
-| [scripts/README.md](./scripts/README.md) | Authentification UI |
-| [scrappe/README.md](./scrappe/README.md) | Configurations YAML |
-| [recordings/README.md](./recordings/README.md) | Enregistrement UI Mode |
+- **Runtime :** Bun / Node.js
+- **Langage :** TypeScript
+- **Automation :** Playwright (Chromium)
+- **Configuration :** YAML
 
 ---
 
-## ⚙️ Configuration YAML
+## 📄 Licence
 
-```yaml
-name: mon-scraper
-url: ${EXAMPLE_URL}  # Variable d'environnement
-headless: true
-
-steps:
-  - action: navigate
-    params:
-      url: ${EXAMPLE_URL}
-  
-  - action: wait
-    params:
-      selector: .content
-  
-  - action: extract
-    params:
-      selector: .item
-      fields:
-        - name: title
-          selector: h2
-```
+MIT
 
 ---
 
-## 🎯 Actions Disponibles
-
-| Action | Description |
-|--------|-------------|
-| `navigate` | Navigation vers une URL |
-| `wait` | Attente d'un élément |
-| `click` | Clic sur un élément |
-| `fill` | Remplir un champ |
-| `extract` | Extraire des données |
-| `paginate` | Navigation multi-pages |
-| `session-load` | Charger une session |
-| `session-save` | Sauvegarder une session |
-
----
-
-## 📊 Résultats
-
-Les résultats sont sauvegardés dans `results/` :
-
-```
-results/
-└── mon-scraper-2026-02-24T12-00-00.json
-```
-
-Format JSON avec métadonnées et données extraites.
-
----
-
-## 🔧 Dépannage
-
-### Session expirée
-
-```bash
-npm run auth
-```
-
-### Erreur de navigation
-
-```bash
-bunx playwright install chromium
-```
-
-### Fichier non trouvé
-
-```bash
-npm run scrape -- --list
-```
-
----
-
-**Créé le:** 24 février 2026  
-**Version:** 1.0
+**Créé le :** 24 février 2026  
+**Version :** 1.0.0  
+**Dernière mise à jour :** 25 février 2026

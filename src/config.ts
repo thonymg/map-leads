@@ -20,7 +20,7 @@ export class ConfigValidationError extends Error {
     path: string,
     expected?: string
   ) {
-    super(message);
+    super(`${message}\n  Contexte: ${path}${expected ? `\n  Attendu: ${expected}` : ''}`);
     this.name = 'ConfigValidationError';
     this.path = path;
     this.expected = expected;
@@ -78,7 +78,7 @@ export async function loadYamlFile<T>(filePath: string): Promise<T> {
 function validateRequiredField<T>(value: T | undefined, fieldName: string, path: string): asserts value is T {
   if (value === undefined || value === null) {
     throw new ConfigValidationError(
-      `Champ obligatoire manquant`,
+      `Champ obligatoire manquant: "${fieldName}"`,
       path,
       `${fieldName} est requis`
     );
