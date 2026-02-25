@@ -149,31 +149,34 @@ export class SelectorOptimizer {
     const [, element, className, attribute] = match;
     if (!element) return null;
     
-    // Trouver le rôle correspondant
-    for (const [role, elements] of Object.entries(ROLE_SELECTORS)) {
-      if (elements.includes(element) || elements.includes(`[${element}]`)) {
-        const roleOptions: RoleOptions = {};
-        
-        // Extraire le nom si présent (aria-label, title, etc.)
-        if (attribute) {
-          const nameMatch = attribute.match(/aria-label=["']([^"']+)["']/);
-          if (nameMatch) {
-            roleOptions.name = nameMatch[1];
-          }
+    // Trouver le rôle correspondant via méthode de tableau (remplace la boucle for)
+    const roleEntry = Object.entries(ROLE_SELECTORS).find(([_, elements]) => 
+      elements.includes(element) || elements.includes(`[${element}]`)
+    );
+
+    if (roleEntry) {
+      const [role] = roleEntry;
+      const roleOptions: RoleOptions = {};
+      
+      // Extraire le nom si présent (aria-label, title, etc.)
+      if (attribute) {
+        const nameMatch = attribute.match(/aria-label=["']([^"']+)["']/);
+        if (nameMatch) {
+          roleOptions.name = nameMatch[1];
         }
-        
-        let optimized = `role=${role}`;
-        if (roleOptions.name) {
-          optimized += ` "${roleOptions.name}"`;
-        }
-        
-        return {
-          original: selector,
-          optimized,
-          strategy: 'role',
-          confidence: roleOptions.name ? 0.95 : 0.85,
-        };
       }
+      
+      let optimized = `role=${role}`;
+      if (roleOptions.name) {
+        optimized += ` "${roleOptions.name}"`;
+      }
+      
+      return {
+        original: selector,
+        optimized,
+        strategy: 'role',
+        confidence: roleOptions.name ? 0.95 : 0.85,
+      };
     }
     
     return null;

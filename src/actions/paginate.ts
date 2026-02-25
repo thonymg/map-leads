@@ -28,29 +28,27 @@ export async function paginate(params: PaginateParams, page: Page): Promise<Acti
     itemSelector,
   } = params;
 
-  const allResults: Record<string, unknown>[] = [];
-  let currentPage = 1;
-  let hasNextPage = true;
+  const results: Record<string, unknown>[] = [];
 
   try {
-    while (hasNextPage && currentPage <= max_pages) {
+    // Fonction récursive terminale pour la pagination
+    const processPages = async (
+      currentPage: number,
+      acc: Record<string, unknown>[]
+    ): Promise<{ pages: number }> => {
+      // Condition de sortie : nombre maximum de pages atteint
+      if (currentPage > max_pages) {
+        return { pages: currentPage - 1 };
+      }
+
       // Extraire les données de la page courante
       let extractParams;
       
       if (itemSelector && fields) {
-        // Utiliser les paramètres fournis
-        extractParams = {
-          selector: itemSelector,
-          fields,
-        };
+        extractParams = { selector: itemSelector, fields };
       } else if (fields) {
-        // Fallback: utiliser un sélecteur générique
-        extractParams = {
-          selector: 'body',
-          fields,
-        };
+        extractParams = { selector: 'body', fields };
       } else {
-        // Pas de champs spécifiés, on continue juste la pagination
         extractParams = null;
       }
 
@@ -58,7 +56,8 @@ export async function paginate(params: PaginateParams, page: Page): Promise<Acti
         const extractResult = await extract(extractParams, page);
         
         if (extractResult.success && Array.isArray(extractResult.data)) {
-          allResults.push(...extractResult.data);
+          // Mutation de l'accumulateur pour éviter la surcharge mémoire
+          acc.push(...(extractResult.data as Record<string, unknown>[]));
         }
       }
 
@@ -67,8 +66,7 @@ export async function paginate(params: PaginateParams, page: Page): Promise<Acti
       
       if (!nextButton) {
         // Bouton de pagination absent = arrêt automatique (CA-18)
-        hasNextPage = false;
-        break;
+        return { pages: currentPage };
       }
 
       // Cliquer sur le bouton "page suivante"
@@ -77,20 +75,23 @@ export async function paginate(params: PaginateParams, page: Page): Promise<Acti
       // Attendre le chargement de la nouvelle page
       await page.waitForLoadState('networkidle', { timeout });
       
-      currentPage++;
-    }
+      // Appel récursif pour la page suivante
+      return processPages(currentPage + 1, acc);
+    };
+
+    const { pages } = await processPages(1, results);
 
     return {
       success: true,
-      message: `${allResults.length} élément(s) extrait(s) sur ${currentPage - 1} page(s)`,
-      data: allResults,
+      message: `${results.length} élément(s) extrait(s) sur ${pages} page(s)`,
+      data: results,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
     return {
       success: false,
       message: `Échec de la pagination avec "${selector}": ${errorMessage}`,
-      data: allResults.length > 0 ? allResults : undefined,
+      data: results.length > 0 ? results : undefined,
     };
   }
 }

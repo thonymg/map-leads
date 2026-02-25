@@ -22,58 +22,58 @@ export class ActionMapper {
   }
 
   /**
-   * Mappe tous les statements vers des étapes YAML
+   * Mappe tous les statements vers des étapes YAML via reduce
    */
   mapStatements(statements: ts.Statement[]): ConvertedStep[] {
-    const steps: ConvertedStep[] = [];
-
-    for (const stmt of statements) {
+    const steps = statements.reduce<ConvertedStep[]>((acc, stmt) => {
       // Navigation: page.goto()
       if (this.parser.isPageGotoCall(stmt)) {
         const url = this.parser.extractUrlFromGoto(stmt);
         if (url) {
-          steps.push({
+          acc.push({
             action: 'navigate',
             params: { url },
           });
         }
-        continue;
+        return acc;
       }
 
       // Clic: page.getByRole().click() ou locator().click()
       if (this.isClickStatement(stmt)) {
         const selector = this.extractSelectorFromClickStatement(stmt);
         if (selector) {
-          steps.push({
+          acc.push({
             action: 'click',
             params: { selector },
             options: { optional: true },
           });
         }
-        continue;
+        return acc;
       }
 
       // Attente implicite avec waitFor
       if (this.isWaitStatement(stmt)) {
         const step = this.mapWait(stmt);
-        if (step) steps.push(step);
-        continue;
+        if (step) acc.push(step);
+        return acc;
       }
 
       // Extraction: boucle for
       if (this.parser.isForLoop(stmt)) {
         const step = this.mapExtractOrPaginate(stmt);
-        if (step) steps.push(step);
-        continue;
+        if (step) acc.push(step);
+        return acc;
       }
 
       // Condition: if
       if (this.parser.isIfStatement(stmt)) {
         const step = this.mapConditional(stmt);
-        if (step) steps.push(step);
-        continue;
+        if (step) acc.push(step);
+        return acc;
       }
-    }
+
+      return acc;
+    }, []);
 
     // Si aucune étape trouvée, essayer une approche plus simple
     if (steps.length === 0) {
@@ -86,36 +86,37 @@ export class ActionMapper {
   }
 
   /**
-   * Approche simplifiée pour mapper les statements
+   * Approche simplifiée pour mapper les statements via reduce
    */
   private mapStatementsSimple(statements: ts.Statement[]): ConvertedStep[] {
-    const steps: ConvertedStep[] = [];
-
-    for (const stmt of statements) {
+    const steps = statements.reduce<ConvertedStep[]>((acc, stmt) => {
       // page.goto()
       if (this.parser.isPageGotoCall(stmt)) {
         const url = this.parser.extractUrlFromGoto(stmt);
         if (url) {
-          steps.push({
+          acc.push({
             action: 'navigate',
             params: { url },
           });
         }
-        continue;
+        return acc;
       }
 
       // page.getBy*().click()
       if (this.isClickStatement(stmt)) {
         const selector = this.extractSelectorFromClickStatement(stmt);
         if (selector) {
-          steps.push({
+          acc.push({
             action: 'click',
             params: { selector },
             options: { optional: true },
           });
         }
+        return acc;
       }
-    }
+      
+      return acc;
+    }, []);
 
     return this.optimizeSteps(steps);
   }
@@ -414,17 +415,19 @@ export class ActionMapper {
   }
 
   /**
-   * Extrait un locator depuis une déclaration de variable
+   * Extrait un locator depuis une déclaration de variable via find
    */
   private extractVariableLocator(stmt: ts.Statement): string | null {
     if (ts.isVariableStatement(stmt)) {
-      for (const decl of stmt.declarationList.declarations) {
-        if (decl.initializer && ts.isCallExpression(decl.initializer)) {
-          const expr = decl.initializer.expression;
-          if (ts.isPropertyAccessExpression(expr) && expr.name.text === 'locator') {
-            return this.parser.extractSelectorFromLocator(decl.initializer);
-          }
-        }
+      const decl = stmt.declarationList.declarations.find(decl => 
+        decl.initializer && 
+        ts.isCallExpression(decl.initializer) && 
+        ts.isPropertyAccessExpression(decl.initializer.expression) && 
+        decl.initializer.expression.name.text === 'locator'
+      );
+
+      if (decl && decl.initializer && ts.isCallExpression(decl.initializer)) {
+        return this.parser.extractSelectorFromLocator(decl.initializer);
       }
     }
     return null;

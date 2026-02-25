@@ -28,11 +28,10 @@ function substituteVars(obj: any, vars: Record<string, unknown>): any {
   } else if (Array.isArray(obj)) {
     return obj.map(item => substituteVars(item, vars));
   } else if (typeof obj === 'object' && obj !== null) {
-    const newObj: any = {};
-    for (const key in obj) {
-      newObj[key] = substituteVars(obj[key], vars);
-    }
-    return newObj;
+    return Object.keys(obj).reduce((acc, key) => {
+      acc[key] = substituteVars(obj[key], vars);
+      return acc;
+    }, {} as any);
   }
   return obj;
 }
@@ -122,7 +121,6 @@ export async function loop(params: LoopParams, page: Page): Promise<ActionResult
     timeout = DEFAULT_TIMEOUT,
   } = params;
 
-  const allResults: Record<string, unknown>[] = [];
   let iterationCount = 0;
 
   try {
@@ -146,45 +144,77 @@ export async function loop(params: LoopParams, page: Page): Promise<ActionResult
     // Contexte partagé entre les itérations
     const contextVars: Record<string, unknown> = {};
 
-    // Itérer sur chaque élément
-    for (let i = 0; i < iterations; i++) {
+    // Itérer sur chaque élément via récursion
+    const processIterations = async (
+      index: number,
+      acc: Record<string, unknown>[]
+    ): Promise<Record<string, unknown>[]> => {
+      // Condition de sortie : itérations terminées
+      if (index >= iterations) {
+        return acc;
+      }
+
       iterationCount++;
-      console.log(`        ↻ Itération ${i + 1}/${iterations}`);
+      console.log(`        ↻ Itération ${index + 1}/${iterations}`);
 
       // Stocker l'index dans le contexte
-      contextVars['index'] = i;
+      contextVars['index'] = index;
       contextVars['total'] = iterations;
 
       // Re-sélectionner les éléments à chaque itération (car le DOM peut changer)
       const currentElements = await page.$$(selector);
       
-      if (i >= currentElements.length) {
-        console.log(`        ⚠️  Plus d'éléments disponibles ( ${currentElements.length} < ${i})`);
-        break;
+      if (index >= currentElements.length) {
+        console.log(`        ⚠️  Plus d'éléments disponibles ( ${currentElements.length} < ${index})`);
+        return acc;
       }
 
-      // Exécuter les étapes pour cet élément
-      for (const step of steps) {
-        const stepResult = await executeStep(step, page, i, contextVars);
+      // Fonction récursive pour traiter les étapes
+      const processSteps = async (
+        stepIndex: number,
+        stepAcc: Record<string, unknown>[]
+      ): Promise<Record<string, unknown>[]> => {
+        // Condition de sortie : étapes terminées
+        if (stepIndex >= steps.length) {
+          return stepAcc;
+        }
+
+        const step = steps[stepIndex];
+        const stepResult = await executeStep(step, page, index, contextVars);
 
         if (!stepResult.success) {
           console.log(`          ❌ Échec étape ${step.action}: ${stepResult.message}`);
-          // Continuer à l'étape suivante
+          // Continuer à l'étape suivante malgré l'échec
         }
 
         // Collecter les données extraites
-        if (stepResult.data && Array.isArray(stepResult.data)) {
-          allResults.push(...stepResult.data);
-        } else if (stepResult.data && typeof stepResult.data === 'object') {
-          allResults.push(stepResult.data as Record<string, unknown>);
+        if (stepResult.data) {
+          if (Array.isArray(stepResult.data)) {
+            stepAcc.push(...stepResult.data);
+          } else if (typeof stepResult.data === 'object') {
+            stepAcc.push(stepResult.data as Record<string, unknown>);
+          }
         }
-      }
+
+        // Appel récursif pour l'étape suivante
+        return processSteps(stepIndex + 1, stepAcc);
+      };
+
+      // Exécuter les étapes pour cet élément
+      const iterationResults = await processSteps(0, []);
+      const newAcc = acc.concat(iterationResults);
 
       // Délai entre les itérations
-      if (delayBetweenIterations > 0 && i < iterations - 1) {
+      if (delayBetweenIterations > 0 && index < iterations - 1) {
         await new Promise(resolve => setTimeout(resolve, delayBetweenIterations));
       }
-    }
+
+      // Appel récursif pour l'itération suivante
+      return processIterations(index + 1, newAcc);
+    };
+
+    // Lancer la boucle récursive
+    const allResults = await processIterations(0, []);
 
     console.log(`      ✅ Boucle terminée: ${iterationCount} itération(s), ${allResults.length} résultat(s)`);
 

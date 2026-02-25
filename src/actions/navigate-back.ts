@@ -21,13 +21,24 @@ export async function navigateBack(params: NavigateBackParams, page: Page): Prom
   const { count = 1, timeout = DEFAULT_TIMEOUT } = params;
 
   try {
-    // Revenir en arrière une ou plusieurs fois
-    for (let i = 0; i < count; i++) {
+    // Fonction récursive terminale pour la navigation arrière
+    const goBack = async (remaining: number): Promise<void> => {
+      // Condition de sortie : plus de pages à remonter
+      if (remaining <= 0) {
+        return;
+      }
+
       await Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle', timeout }),
         page.goBack({ timeout }),
       ]);
-    }
+
+      // Appel récursif pour la page suivante
+      return goBack(remaining - 1);
+    };
+
+    // Lancer la récursion
+    await goBack(count);
 
     return {
       success: true,

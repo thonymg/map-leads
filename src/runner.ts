@@ -143,20 +143,25 @@ export async function runScraper(
 
     console.log(`    🚀 Exécution de ${definition.steps.length} étapes...`);
 
-    // Exécuter chaque étape dans l'ordre (CA-21)
-    for (let i = 0; i < definition.steps.length; i++) {
-      const step = definition.steps[i]!;
-      console.log(`      Étape ${i + 1}/${definition.steps.length}: ${step.action}`);
+    // Exécuter chaque étape dans l'ordre (CA-21) via récursion
+    const processSteps = async (index: number): Promise<void> => {
+      // Condition de sortie : toutes les étapes exécutées
+      if (index >= definition.steps.length) {
+        return;
+      }
+
+      const step = definition.steps[index]!;
+      console.log(`      Étape ${index + 1}/${definition.steps.length}: ${step.action}`);
       
-      const stepResult = await executeStep(step, page, i);
+      const stepResult = await executeStep(step, page!, index);
 
       // Capture erreur sans interruption (CA-23)
       if (!stepResult.success && stepResult.error) {
         console.log(`        ❌ Erreur: ${stepResult.error.message}`);
         result.errors.push(stepResult.error);
         result.success = false;
-        // Continuer à l'étape suivante
-        continue;
+        // Continuer à l'étape suivante malgré l'erreur
+        return processSteps(index + 1);
       }
 
       console.log(`        ✅ Succès`);
@@ -181,7 +186,12 @@ export async function runScraper(
         // Estimer le nombre de pages basé sur le nombre de résultats
         result.pageCount = Math.ceil(dataArray.length / 10) || 1;
       }
-    }
+
+      // Appel récursif pour l'étape suivante
+      return processSteps(index + 1);
+    };
+
+    await processSteps(0);
   } catch (error) {
     // Erreur fatale non capturée
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
