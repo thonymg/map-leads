@@ -1,0 +1,106 @@
+# Scraper Configuration — Audemars Piguet Stores
+# Date: 2026-02-25
+#
+# Page cible : https://www.audemarspiguet.com/com/fr/stores.html
+# Données à extraire : nom, adresse, email, téléphone de chaque boutique
+#
+# Usage: npm run scrape -- --file audemarspiguet.com.scrape.scrappe.yaml
+
+name: audemarspiguet.com.scrape
+url: https://www.audemarspiguet.com/
+headless: false  # false pour voir le chargement
+viewport:
+  width: 1920
+  height: 1080
+
+scrapers:
+  - name: audemars-piguet-stores
+    url: https://www.audemarspiguet.com/
+    steps:
+      # ========================================================================
+      # ÉTAPE 1 : Navigation vers la page des boutiques
+      # ========================================================================
+      - action: navigate
+        params:
+          url: https://www.audemarspiguet.com/com/fr/stores.html?search=france
+          timeout: 120000
+
+      # Attendre que la page soit complètement chargée
+      - action: wait
+        params:
+          duration: 30000  # 30 secondes pour chargement complet + OneTrust
+
+      # ========================================================================
+      # ÉTAPE 2 : Accepter les cookies OneTrust si présent
+      # ========================================================================
+      - action: click
+        params:
+          selector: '#onetrust-accept-btn-handler, #accept-recommended-btn-handler'
+          timeout: 5000
+
+      # Attendre que le bandeau disparaisse
+      - action: wait
+        params:
+          duration: 2000
+
+      # ========================================================================
+      # ÉTAPE 3 : Attendre que les cartes de boutiques soient chargées
+      # ========================================================================
+      - action: wait
+        params:
+          selector: '.store-card__infos'
+          timeout: 30000
+
+      # Attendre encore un peu
+      - action: wait
+        params:
+          duration: 5000
+
+      # ========================================================================
+      # ÉTAPE 4 : Extraire TOUTES les boutiques en une seule fois
+      # ========================================================================
+      - action: extract
+        params:
+          selector: '.store-card__infos'
+          fields:
+            # Nom de la boutique
+            - name: nom
+              selector: '.store-card__name, .store-card__title, h3, h2, .store-card h1'
+
+            # Adresse complète
+            - name: adresse
+              selector: '.store-card__address, .store-card__location, .store-card__address-line'
+
+            # Téléphone
+            - name: telephone
+              selector: '.store-card__phone, a[href^="tel:"]'
+
+            # Email - cliquer d'abord pour afficher
+            - name: email
+              selector: '.email-section__email span, a[href^="mailto:"], .store-card__email'
+
+            # Lien vers la page détail
+            - name: lien_boutique
+              selector: 'a.store-card__link, a[href*="/stores/"]'
+              attribute: href
+
+            # Ville
+            - name: ville
+              selector: '.store-card__city, .store-card__location'
+
+            # Code postal
+            - name: code_postal
+              selector: '.store-card__postal, .store-card__zip'
+
+            # Pays
+            - name: pays
+              selector: '.store-card__country'
+
+            # Horaires
+            - name: horaires
+              selector: '.store-card__hours, .store-card__opening, .store-card__schedule'
+
+metadata:
+  recordedAt: 2026-02-25T10:25:16.555Z
+  playwrightVersion: 1.58.2
+  optimizerVersion: 1.0.0
